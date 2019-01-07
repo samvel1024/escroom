@@ -23,10 +23,9 @@ int main(int count, char *argv[]) {
     int id = atoi(argv[1]);
 
     MsgBuffer *buffer = msgb_init("client_server", false);
-    MsgSynch *synch = synch_bind_semaphores();
 
     log_debug("CLient %d Server: %s", id,  buffer->server);
     sprintf(buffer->clients[id], "Hello from client %d", id);
     log_debug("Sent message");
-    synch_destroy(synch);
+    msgb_close(buffer);
 }
