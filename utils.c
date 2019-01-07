@@ -20,6 +20,7 @@ void log_init(char *name) {
 }
 
 #ifdef DEBUG
+
 void log_debug(const char *format, ...) {
     printf("[PID=%d %s] ", getpid(), log_prefix);
     va_list args;
@@ -30,6 +31,7 @@ void log_debug(const char *format, ...) {
     }
     va_end(args);
 }
+
 #else
 void log_debug(const char *format, ...) {}
 #endif
@@ -65,17 +67,22 @@ void shared_mem_close(char *mem_name, void *shared_mem, size_t size) {
     munmap(shared_mem, size);
 }
 
-
-void *init_sem(bool init) {
-    int flag = init ? (O_RDWR | O_CREAT | O_EXCL) : O_RDWR;
-    sem_t *sem = sem_open(SEM_NAME, flag, S_IRUSR | S_IWUSR, 1);
-    if (sem == SEM_FAILED && errno == EEXIST && init) {
+void *force_create_sem(char *sem_name, int val) {
+    int flag = (O_RDWR | O_CREAT | O_EXCL);//: O_RDWR;
+    sem_t *sem = sem_open(sem_name, flag, S_IRUSR | S_IWUSR, val);
+    if (sem == SEM_FAILED && errno == EEXIST) {
         log_debug("Semaphore already created, deleting the existing");
-        sem_unlink(SEM_NAME);
-        sem = sem_open(SEM_NAME, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR, 1);
-    } else {
+        sem_unlink(sem_name);
+        sem = sem_open(sem_name, flag, S_IRUSR | S_IWUSR, val);
+    } else if (sem != SEM_FAILED){
         log_debug("Created a new semaphore");
     }
+    assertion(sem != SEM_FAILED);
+    return sem;
+}
+
+void *bind_sem(char *sem_name) {
+    sem_t *sem = sem_open(sem_name, O_RDWR, S_IRUSR | S_IWUSR, 0);
     assertion(sem != SEM_FAILED);
     return sem;
 }

@@ -14,6 +14,7 @@ int main() {
     log_init("Server");
 
     MsgBuffer *buffer = msgb_init("client_server", true);
+    MsgSynch *synch = synch_create_semaphores();
     sprintf(buffer->server, "Message from server");
     void *begin = buffer;
     log_debug("Start of buffer: %p\n", buffer);
@@ -42,5 +43,6 @@ int main() {
     }
 
     wait(NULL);
+    synch_destroy(synch);
     msgb_close(buffer);
 }
