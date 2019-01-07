@@ -34,7 +34,7 @@ if (__expr_val == 0) {\
 }\
 }
 
-void *shared_mem_get(char *name, uint64_t size);
+void *shared_mem_get(char *name, unsigned long size);
 
 void shared_mem_close(char *mem_name, void *shared_mem, size_t size);
 

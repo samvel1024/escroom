@@ -41,7 +41,7 @@ void log_debug(const char *format, ...) {}
 
 
 
-void *shared_mem_get(char *mem_name, uint64_t size) {
+void *shared_mem_get(char *mem_name, unsigned long size) {
     int file_desc = shm_open(mem_name, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
     if (errno == EEXIST) {
         log_debug("Shared mem already created opening the existing one");
