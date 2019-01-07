@@ -11,30 +11,21 @@
 #include <sys/stat.h>        /* For mode constants */
 #include <fcntl.h>           /* For O_* constants */
 #include <assert.h>
-#include "commons.h"
+#include "messaging.h"
 #include <string.h>
 
-int *shm;
 
 
 int main(int count, char *argv[]) {
-    Logger_init("Adder");
-    shm = shared_mem_get(false);
-    Logger_log("Started adder\n");
+    log_init("Adder");
+    log_debug("Started adder\n");
     assert(count > 0 && "Count has to be greater than 0");
-    int times = atoi(argv[1]);
-    assert(times > 0);
+    int id = atoi(argv[1]);
 
-    sem_t *s = init_sem();
+    MsgBuffer *buffer = msgb_init("client_server");
 
-    sleep(1000);
-
-    for(int i=0; i<times; ++i){
-        sem_wait(s);
-        shm[0]++;
-        sem_post(s);
-    }
-
-    shared_mem_close();
-    Logger_destruct();
+    log_debug("CLient %d Server: %s", id,  buffer->server);
+    sprintf(buffer->clients[id], "Hello from client %d", id);
+    log_debug("Sent message");
+//    msgb_close(buffer);
 }
