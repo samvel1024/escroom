@@ -95,10 +95,11 @@ MsgBuffer *msgb_init(char *name, bool server) {
 }
 
 void msgb_close(MsgBuffer *buffer) {
-    if (buffer->synch->server) {
+    bool server = buffer->synch->server;
+    synch_destroy(buffer->synch);
+    if (server) {
         shared_mem_close(buffer->shmem_name, buffer, sizeof(MsgBuffer));
     }
-    synch_destroy(buffer->synch);
 }
 
 
