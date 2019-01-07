@@ -66,7 +66,7 @@ MsgSynch *synch_bind_semaphores() {
     return sycnh_create(false);
 }
 
-MsgSynch *synch_destroy(MsgSynch *synch) {
+void *synch_destroy(MsgSynch *synch) {
     if (synch->owned) {
         sem_close(synch->server_busy);
         sem_close(synch->server_mutex);
@@ -86,6 +86,7 @@ MsgSynch *synch_destroy(MsgSynch *synch) {
     }
     free(synch->client_busy);
     free(synch->client_empty);
+    free(synch);
 }
 
 
