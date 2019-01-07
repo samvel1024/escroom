@@ -13,7 +13,7 @@
 int main() {
     log_init("Server");
 
-    MsgBuffer *buffer = msgb_init("client_server");
+    MsgBuffer *buffer = msgb_init("client_server", true);
     sprintf(buffer->server, "Message from server");
     void *begin = buffer;
     log_debug("Start of buffer: %p\n", buffer);
@@ -35,7 +35,9 @@ int main() {
 
     sleep(1);
     for (int i = 0; i < child_count; ++i) {
+
         void *ptr = &(buffer->clients[i]);
+        assert(ptr < begin + sizeof(MsgBuffer));
         log_debug("Message from %d: %s", i, buffer->clients[i]);
     }
 

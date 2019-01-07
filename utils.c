@@ -41,13 +41,15 @@ void log_debug(const char *format, ...) {}
 
 
 
-void *shared_mem_get(char *mem_name, unsigned long size) {
+void *shared_mem_get(char *mem_name, unsigned long size, bool init) {
+    if (init)
+        unlink(mem_name);
     int file_desc = shm_open(mem_name, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
     if (errno == EEXIST) {
         log_debug("Shared mem already created opening the existing one");
         file_desc = shm_open(mem_name, O_RDWR, S_IRUSR | S_IWUSR);
     } else {
-        log_debug("Opened shared memory");
+        log_debug("Opened new shared memory");
         assertion(ftruncate(file_desc, size) != -1);
     }
     assertion(file_desc != 1 && "Shm_open failed");

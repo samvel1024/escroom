@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>        /* For mode constants */
-#include <fcntl.h>           /* For O_* constants */
+#include <fcntl.h>
 #include <assert.h>
 #include "messaging.h"
 #include <string.h>
@@ -22,7 +22,7 @@ int main(int count, char *argv[]) {
     assert(count > 0 && "Count has to be greater than 0");
     int id = atoi(argv[1]);
 
-    MsgBuffer *buffer = msgb_init("client_server");
+    MsgBuffer *buffer = msgb_init("client_server", false);
 
     log_debug("CLient %d Server: %s", id,  buffer->server);
     sprintf(buffer->clients[id], "Hello from client %d", id);

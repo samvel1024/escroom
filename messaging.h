@@ -13,8 +13,8 @@ typedef struct msg_buffer {
 } MsgBuffer;
 
 
-MsgBuffer *msgb_init(char *shmem_name) {
-    MsgBuffer *ptr = shared_mem_get(shmem_name, sizeof(MsgBuffer));
+MsgBuffer *msgb_init(char *shmem_name, bool init) {
+    MsgBuffer *ptr = shared_mem_get(shmem_name, sizeof(MsgBuffer), init);
     strcpy(ptr->shmem_name, shmem_name);
     return ptr;
 }
