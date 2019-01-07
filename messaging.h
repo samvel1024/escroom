@@ -22,6 +22,7 @@ typedef struct msg_synch {
     sem_t **client_empty;
     sem_t **client_busy;
 } MsgSynch;
+
 char *append_prefix(char *buff, char *prefix, char *str) {
     sprintf(buff, "%s_%s", prefix, str);
     return buff;
@@ -29,6 +30,7 @@ char *append_prefix(char *buff, char *prefix, char *str) {
 
 
 #define create_sem(name, val)  force_new ? force_create_sem(name, val) : bind_sem(name)
+
 MsgSynch *synch_create(bool force_new, char *prefix) {
     MsgSynch *s = malloc(sizeof(MsgSynch));
     char name[TOKEN_BUFF_SIZE];
@@ -83,23 +85,43 @@ typedef struct msg_buffer {
     char shmem_name[TOKEN_BUFF_SIZE];
     char server[MSG_BUFF_LEN];
     char clients[MAX_CLIENTS][MSG_BUFF_LEN];
-    MsgSynch *synch;
 } MsgBuffer;
 
 
 MsgBuffer *msgb_init(char *name, bool server) {
     MsgBuffer *ptr = shared_mem_get(name, sizeof(MsgBuffer), server);
     strcpy(ptr->shmem_name, name);
-    ptr->synch = synch_create(server, name);
     return ptr;
 }
 
 void msgb_close(MsgBuffer *buffer) {
-    bool server = buffer->synch->server;
-    synch_destroy(buffer->synch);
-    if (server) {
-        shared_mem_close(buffer->shmem_name, buffer, sizeof(MsgBuffer));
+    shared_mem_close(buffer->shmem_name, buffer, sizeof(MsgBuffer));
+}
+
+
+/******************************* IPC  *********************************************
+ **********************************************************************************/
+
+typedef struct ipc_manage {
+    MsgBuffer *buff;
+    MsgSynch *synch;
+    bool server;
+} IpcManager;
+
+
+IpcManager *ipc_create(bool server, char *prefix) {
+    IpcManager *mngr = malloc(sizeof(IpcManager));
+    mngr->server = server;
+    mngr->buff = msgb_init(prefix, server);
+    mngr->synch = synch_create(server, prefix);
+    return mngr;
+}
+
+void ipc_close(IpcManager *mngr){
+    if (mngr->server){
+        msgb_close(mngr->buff);
     }
+    synch_destroy(mngr->synch);
 }
 
 

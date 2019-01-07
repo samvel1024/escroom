@@ -22,10 +22,10 @@ int main(int count, char *argv[]) {
     assert(count > 0 && "Count has to be greater than 0");
     int id = atoi(argv[1]);
 
-    MsgBuffer *buffer = msgb_init("client_server", false);
-
-    log_debug("CLient %d Server: %s", id,  buffer->server);
-    sprintf(buffer->clients[id], "Hello from client %d", id);
+    IpcManager *ipc = ipc_create(false, "a");
+    MsgBuffer *buff = ipc->buff;
+    log_debug("CLient %d Server: %s", id,  buff->server);
+    sprintf(buff->clients[id], "Hello from client %d", id);
     log_debug("Sent message");
-    msgb_close(buffer);
+    ipc_close(ipc);
 }

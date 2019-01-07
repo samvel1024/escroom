@@ -13,7 +13,8 @@
 int main() {
     log_init("Server");
 
-    MsgBuffer *buffer = msgb_init("client_server", true);
+    IpcManager *ipc = ipc_create(true, "a");
+    MsgBuffer *buffer =ipc->buff;
     sprintf(buffer->server, "Message from server");
     void *begin = buffer;
     log_debug("Start of buffer: %p\n", buffer);
@@ -42,5 +43,5 @@ int main() {
     }
 
     wait(NULL);
-    msgb_close(buffer);
+    ipc_close(ipc);
 }
