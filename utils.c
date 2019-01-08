@@ -48,7 +48,6 @@ void *shared_mem_get(char *mem_name, unsigned long size, bool init) {
         unlink(mem_name);
     int file_desc = shm_open(mem_name, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
     if (errno == EEXIST) {
-        log_debug("Shared mem already created opening the existing one");
         file_desc = shm_open(mem_name, O_RDWR, S_IRUSR | S_IWUSR);
     } else {
         log_debug("Opened new shared memory");
@@ -68,14 +67,12 @@ void shared_mem_close(char *mem_name, void *shared_mem, size_t size) {
 }
 
 void *force_create_sem(char *sem_name, int val) {
-    int flag = (O_RDWR | O_CREAT | O_EXCL);//: O_RDWR;
+    int flag = (O_RDWR | O_CREAT | O_EXCL);
     sem_t *sem = sem_open(sem_name, flag, S_IRUSR | S_IWUSR, val);
     if (sem == SEM_FAILED && errno == EEXIST) {
         log_debug("Semaphore already created, deleting the existing");
         sem_unlink(sem_name);
         sem = sem_open(sem_name, flag, S_IRUSR | S_IWUSR, val);
-    } else if (sem != SEM_FAILED){
-        log_debug("Created a new semaphore");
     }
     assertion(sem != SEM_FAILED);
     return sem;

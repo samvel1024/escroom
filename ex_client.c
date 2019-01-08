@@ -17,15 +17,18 @@
 
 
 int main(int count, char *argv[]) {
-    log_init("Adder");
-    log_debug("Started adder\n");
     assert(count > 0 && "Count has to be greater than 0");
     int id = atoi(argv[1]);
+    char buff[MSG_BUFF_LEN];
+    sprintf(buff, "Adder-%d", id);
 
+    log_init(buff);
     IpcManager *ipc = ipc_create(false, "a", id);
-    MsgBuffer *buff = ipc->buff;
-    log_debug("CLient %d Server: %s", id,  buff->server);
-    sprintf(buff->clients[id], "Hello from client %d", id);
-    log_debug("Sent message");
+
+    sprintf(buff, "Hello server, from client %d", id);
+    ipc_sendto_server(ipc, buff);
+    ipc_getfrom_server(ipc, buff, id);
+    log_debug("Message from server: %s", buff);
+
     ipc_close(ipc);
 }
