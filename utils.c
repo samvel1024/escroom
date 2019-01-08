@@ -22,7 +22,7 @@ void log_init(char *name) {
 #ifdef DEBUG
 
 void log_debug(const char *format, ...) {
-  printf("[PID=%d %s] ", getpid(), log_prefix);
+  printf("[PID=%d %s DEBUG] ", getpid(), log_prefix);
   va_list args;
   va_start(args, format);
   vprintf(format, args);
