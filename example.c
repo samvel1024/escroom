@@ -13,28 +13,26 @@
 
 #include "utils.h"
 
-
 #define SHM_NAME           "/pw_prractice_memory"
 #define NAP_TIME           2
 #define BUFF_SIZE          12
 
-void print_table(char *t, int len){
+void print_table(char *t, int len) {
 
   int i;
 
   printf("Proces %d, tablica pod adresem %p:\n", getpid(), t);
-  for(i = 0; i < len; ++i)
+  for (i = 0; i < len; ++i)
     printf("|%c", t[i]);
   printf("|\n\n");
 
   return;
 }
 
-
-void child(){
+void child() {
   int fd_memory = shm_open(SHM_NAME, O_RDWR, S_IRUSR | S_IWUSR);
   if (fd_memory == -1) assertion(false && "child shm_open");
-  int   prot = PROT_READ | PROT_WRITE;
+  int prot = PROT_READ | PROT_WRITE;
   int flags = MAP_SHARED;
   char *mapped_mem = (char *) mmap(NULL, BUFF_SIZE, prot, flags,
                                    fd_memory, 0);
@@ -52,7 +50,7 @@ void child(){
   shm_unlink(SHM_NAME); /*usunęliśmy plik specjalny*/ //Co się stanie, jeśli zakomentuję?
 }
 
-int main(){
+int main() {
 
   char buff[BUFF_SIZE] = "Ala ma kota";
   char *mapped_mem;
@@ -63,10 +61,9 @@ int main(){
   printf("Wielkość strony to %lu\n", sysconf(_SC_PAGE_SIZE));
 
   fd_memory = shm_open(SHM_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-  if(fd_memory == -1) assertion(false&&"shm_open");
+  if (fd_memory == -1) assertion(false && "shm_open");
 
-  if (ftruncate(fd_memory, BUFF_SIZE) == -1)
-    assertion(false&&"truncate");
+  if (ftruncate(fd_memory, BUFF_SIZE) == -1) assertion(false && "truncate");
 
   //flagi dla mmap; wspólne dla dziecka i rodzica
   prot = PROT_READ | PROT_WRITE;
@@ -75,32 +72,29 @@ int main(){
 
   sleep(NAP_TIME);
 
-  switch(pid = fork()){
-    case -1:
-      assertion(false&&"fork");
+  switch (pid = fork()) {
+    case -1: assertion(false && "fork");
     case 0:
       //dziecko
-        child();
-        return 0;
-    default:
-      break;
+      child();
+      return 0;
+    default:break;
   }
   //rodzic
 
   //mapuję pamięć
 //  fd_memory = shm_open(SHM_NAME, O_RDWR, S_IRUSR | S_IWUSR);
-  if(fd_memory == -1) assertion(false&&"parent shm_open");
+  if (fd_memory == -1) assertion(false && "parent shm_open");
   mapped_mem = (char *) mmap(NULL, BUFF_SIZE, prot, flags,
                              fd_memory, 0);
-  if(mapped_mem == MAP_FAILED){
-    assertion(false&&"mmap");
+  if (mapped_mem == MAP_FAILED) {
+    assertion(false && "mmap");
   }
   close(fd_memory); /*plik specjalny dalej istnieje*/
 
   printf("Pid rodzica %d, pid dziecka: %d\n", getpid(), pid);
   print_table(mapped_mem, BUFF_SIZE);
-  sleep(2* NAP_TIME);
-
+  sleep(2 * NAP_TIME);
 
   strncpy(mapped_mem, buff, BUFF_SIZE);
   printf("Proces %d, Zmieniłem zawartosć pamięci\n", getpid());

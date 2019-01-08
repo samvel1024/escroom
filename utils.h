@@ -18,11 +18,10 @@
 #include <stdbool.h>
 #include <sys/errno.h>
 #include <execinfo.h>
+#include <semaphore.h>
 
 // helper-function to print the current stack trace
 void print_stacktrace();
-
-#define SEM_NAME "/semapo4r2li2"
 
 #define assertion(__expr) {\
 int __expr_val = (__expr); \
@@ -38,11 +37,12 @@ void *shared_mem_get(char *name, unsigned long size, bool init);
 
 void shared_mem_close(char *mem_name, void *shared_mem, size_t size);
 
-void *init_sem(bool first);
+sem_t *force_create_sem(char *sem_name, int val);
+
+sem_t *bind_sem(char *sem_name);
 
 void log_init(char *);
 
 void log_debug(const char *format, ...);
-
 
 #endif // ESCROOM_UTILS_H
