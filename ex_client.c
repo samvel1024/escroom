@@ -22,7 +22,7 @@ int main(int count, char *argv[]) {
     assert(count > 0 && "Count has to be greater than 0");
     int id = atoi(argv[1]);
 
-    IpcManager *ipc = ipc_create(false, "a");
+    IpcManager *ipc = ipc_create(false, "a", id);
     MsgBuffer *buff = ipc->buff;
     log_debug("CLient %d Server: %s", id,  buff->server);
     sprintf(buff->clients[id], "Hello from client %d", id);

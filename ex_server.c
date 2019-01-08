@@ -13,13 +13,13 @@
 int main() {
     log_init("Server");
 
-    IpcManager *ipc = ipc_create(true, "a");
+    IpcManager *ipc = ipc_create(true, "a", -1);
     MsgBuffer *buffer =ipc->buff;
     sprintf(buffer->server, "Message from server");
     void *begin = buffer;
     log_debug("Start of buffer: %p\n", buffer);
     int pid;
-    int child_count = 7;
+    int child_count = 1024;
     for (int i = 0; i < child_count; ++i) {
         switch (pid = fork()) {
             case -1:
