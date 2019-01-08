@@ -47,7 +47,7 @@ int main(int argc, char **argv){
 
   log_init(buff);
   game = game_bind_shared();
-  IpcManager *ipc = ipc_create(false, "es", player_id);
+  ipc = ipc_create(false, "es", player_id);
 
   init_player();
   wait_for_game_start();
