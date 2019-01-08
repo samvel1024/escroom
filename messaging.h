@@ -1,3 +1,8 @@
+/**
+ * Single item buffer producers and consumers implementation
+ * using POSIX semaphores and shared memory
+ */
+
 #ifndef ESCROOM_MESSAGING_H
 #define ESCROOM_MESSAGING_H
 
@@ -11,6 +16,11 @@
 /******************************* Synchronization objects ***************************
  ***********************************************************************************/
 
+/**
+ * Contains necessary semaphore instances for server and client
+ * Server creates array of semaphores for each client and server,
+ * whereas client binds only his and server's semaphore
+ */
 typedef struct msg_synch {
   bool server;
   char *prefix;
@@ -102,7 +112,11 @@ void synch_destroy(MsgSynch *synch) {
 
 /******************************* Messaging ******************************************
  **********************************************************************************/
-
+/**
+ * Buffers for communication between processes
+ * Server can write to all client buffers.
+ * Clients can write only to servers buffer
+ */
 typedef struct msg_buffer {
   char shmem_name[TOKEN_BUFF_SIZE];
   char server[MSG_BUFF_LEN];
@@ -121,7 +135,9 @@ void msgb_close(MsgBuffer *buffer) {
 
 /******************************* IPC  *********************************************
  **********************************************************************************/
-
+/**
+ * Brings all above structs together to provide a uniform API for creation and destruction
+ */
 typedef struct ipc_manage {
   MsgBuffer *buff;
   MsgSynch *synch;

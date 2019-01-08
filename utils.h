@@ -20,13 +20,12 @@
 #include <execinfo.h>
 #include <semaphore.h>
 
-// helper-function to print the current stack trace
 void print_stacktrace();
 
 #define assertion(__expr) {\
 int __expr_val = (__expr); \
 if (__expr_val == 0) {\
-    fprintf( stderr,"[" #__expr "] assertion failed, ret_val=%d, errno=%d, error_str=%s\n", __expr_val, errno, strerror(errno)); \
+    fprintf( stderr,"[" #__expr "] assertion failed, ret_val=%d, errno=%d, error_str=%s pid=%d\n", __expr_val, errno, strerror(errno), getpid()); \
     fprintf( stderr, "Location: file=%s, line=%d\n", __FILE__, __LINE__); \
     print_stacktrace(); \
     exit(1); \

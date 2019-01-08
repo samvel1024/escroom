@@ -4,6 +4,7 @@
 
 #include <stdbool.h>
 #include "utils.h"
+#include "messaging.h"
 
 #define MAX_PLAYERS 1025
 #define MAX_ROOMS 1025
@@ -65,6 +66,20 @@ void game_init(Game *g, int players, int rooms) {
     g->rooms[i].max_size = NONE;
     room_set_empty(&(g->rooms[i]));
   }
+}
+
+Game *game_shared_init(int players, int rooms) {
+  Game *ptr = shared_mem_get("esc_game", sizeof(Game), true);
+  game_init(ptr, players, rooms);
+  return ptr;
+}
+
+Game *game_bind_shared() {
+  return shared_mem_get("esc_game", sizeof(Game), false);
+}
+
+void game_close_shared(Game *g) {
+  shared_mem_close("esc_room", g, sizeof(Game));
 }
 
 void game_init_room(Game *g, int room, int type, int size) {
@@ -146,8 +161,60 @@ bool game_player_leave_room(Game *g, int player) {
   return !r->game_started;
 }
 
-int bool_choose_room(Game *g, int p_ids[], char types[]) {
+typedef enum game_event_type {
+  ev_player_register = 1,
+  ev_player_proposal = 1 << 1,
+  ev_player_entering_room = 1 << 2,
+  ev_player_leaving_room = 1 << 3,
 
+  ev_server_game_started = 1 << 4,
+  ev_sever_wrong_proposal = 1 << 5,
+
+} GameEventType;
+
+typedef struct game_message {
+  enum game_event_type type;
+  int player_id;
+} GameMsg;
+
+char msg_buff[MSG_BUFF_LEN];
+GameMsg game_msg;
+
+#define MSG_FORMAT "t=%d pl_id=%d"
+
+void game_write_message(){
+  sprintf(msg_buff, MSG_FORMAT, game_msg.type, game_msg.player_id);
 }
+
+void game_send_server_started(IpcManager *ipc, int client){
+  game_msg.type = ev_server_game_started;
+  game_msg.player_id = NONE;
+  game_write_message();
+  ipc_sendto_client(ipc, msg_buff, client);
+}
+
+
+void game_send_player_register(IpcManager *ipc, int player_id){
+  game_msg.type = ev_player_register;
+  game_msg.player_id = player_id;
+  game_write_message();
+  ipc_sendto_server(ipc, msg_buff);
+}
+
+
+GameMsg *game_read_client_event(IpcManager *ipc, int expected_ev){
+  ipc_getfrom_client(ipc, msg_buff);
+  sscanf(msg_buff, MSG_FORMAT, &(game_msg.type), &(game_msg.player_id));
+  assertion((expected_ev & game_msg.type) != 0 && "Unexpected event type");
+  return &game_msg;
+}
+
+GameMsg *game_read_server_event(IpcManager *ipc, int client, int expected_ev){
+  ipc_getfrom_server(ipc, msg_buff, client);
+  sscanf(msg_buff, MSG_FORMAT, &(game_msg.type), &(game_msg.player_id));
+  assertion((expected_ev & game_msg.type) != 0 && "Unexpected event type");
+  return &game_msg;
+}
+
 
 #endif // ESCROOM_GAME_H
