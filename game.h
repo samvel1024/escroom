@@ -3,11 +3,13 @@
 #define ESCROOM_GAME_H
 
 #include <stdbool.h>
+#include <ctype.h>
 #include "utils.h"
 #include "messaging.h"
 
 #define MAX_PLAYERS 1025
 #define MAX_ROOMS 1025
+#define MAX_TYPES 26
 #define MSG_BUFFER_SIZE 10000
 #define NONE -1
 
@@ -38,6 +40,48 @@ typedef struct game_t {
   int player_count;
   int room_count;
 } Game;
+
+typedef struct game_def_t {
+  char room_type;
+  int types[MAX_TYPES];
+  int ids[MAX_PLAYERS];
+} GameDef;
+
+void game_def_init(GameDef *def) {
+  def->room_type = NONE;
+  for (int i = 0; i < MAX_TYPES; ++i)
+    def->types[i] = 0;
+  def->ids[0] = NONE;
+}
+
+GameDef *game_def_read_next(GameDef *def, FILE *f) {
+  if (feof(f))
+    return NULL;
+  char buff[MSG_BUFF_LEN];
+  char *line = fgets(buff, MSG_BUFF_LEN, f);
+  assertion(ferror(f) == 0 && "There was error reading the file")
+  if (line == NULL)
+    return NULL;
+  int ids = 0;
+  char *token = strtok(line, " ");
+  game_def_init(def);
+  while (token != NULL) {
+    if (*token == '\n')
+      break;
+    if (token == line) { // room type (has to be the first)
+      assertion(strlen(token) == 1 && "Type of the room cannot be longer than 1 char");
+      def->room_type = *token;
+    } else if (isalpha(*token)) { // type
+      def->types[*token - 'A']++;
+    } else { // id
+      int id = atoi(token);
+      def->ids[ids++] = id;
+    }
+    token = strtok(NULL, " ");
+  }
+  def->ids[ids] = NONE;
+  return def;
+}
 
 void player_set_free(Player *p) {
   p->in_room = 0;
@@ -146,6 +190,42 @@ bool game_add_player_to_waiting_list(Game *g, int room, int player) {
   return r->game_started;
 }
 
+int game_find_room(Game *g, int type) {
+  assertion(type >= 'A' && type <= 'Z');
+  for (int i = 0; i < g->room_count; ++i) {
+    if (g->rooms[i].type == type)
+      return i;
+  }
+  return NONE;
+}
+
+bool game_is_playable(Game *g, GameDef *def, int player_id) {
+  assertion(player_id < g->player_count && player_id >= 0);
+  if (game_find_room(g, def->room_type) == NONE)
+    return false;
+
+  bool busy[MAX_PLAYERS];
+  for (int i = 0; i < MAX_PLAYERS; ++i)
+    busy[i] = false;
+  for (int i = 0; i < MAX_PLAYERS && def->ids[i] != NONE; ++i) {
+    if (def->ids[i] < 0 || def->ids[i] >= g->player_count) // No player with that id
+      return false;
+    busy[def->ids[i]] = true;
+  }
+
+  int wanted_types[MAX_TYPES];
+  memcpy(wanted_types, def->types, sizeof(wanted_types));
+  for (int i = 0; i < g->player_count; ++i) {
+    if (!busy[i])
+      wanted_types[g->players[i].type - 'A']--;
+  }
+  for (int i = 0; i < MAX_TYPES; ++i) {
+    if (wanted_types[i] > 0)
+      return false;
+  }
+  return true;
+}
+
 bool game_player_leave_room(Game *g, int player) {
   assertion((player < g->player_count) && "Player out of bounds");
   Player *p = &(g->players[player]);
@@ -163,58 +243,66 @@ bool game_player_leave_room(Game *g, int player) {
 
 typedef enum game_event_type {
   ev_player_register = 1,
-  ev_player_proposal = 1 << 1,
-  ev_player_entering_room = 1 << 2,
-  ev_player_leaving_room = 1 << 3,
+  ev_server_welcome = 1 << 1,
 
-  ev_server_game_started = 1 << 4,
-  ev_sever_wrong_proposal = 1 << 5,
+  ev_player_definition = 1 << 2,
+
+  ev_server_ready_room = 1 << 3,
+  ev_player_joining_room = 1 << 4,
+  ev_server_room_started = 1 << 5,
+  ev_player_leaving_room = 1 << 6,
+
+  ev_player_finished = 1 << 7,
+  ev_sever_finished = 1 << 8,
 
 } GameEventType;
 
 typedef struct game_message {
   enum game_event_type type;
   int player_id;
+  GameDef *game_def;
 } GameMsg;
 
 char msg_buff[MSG_BUFF_LEN];
 GameMsg game_msg;
+GameDef game_def;
 
 #define MSG_FORMAT "t=%d pl_id=%d"
 
-void game_write_message(){
+void game_write_message() {
   sprintf(msg_buff, MSG_FORMAT, game_msg.type, game_msg.player_id);
 }
 
-void game_send_server_started(IpcManager *ipc, int client){
-  game_msg.type = ev_server_game_started;
+void game_send_server_welcome(IpcManager *ipc, int client) {
+  game_msg.type = ev_server_welcome;
   game_msg.player_id = NONE;
   game_write_message();
   ipc_sendto_client(ipc, msg_buff, client);
 }
 
-
-void game_send_player_register(IpcManager *ipc, int player_id){
+void game_send_player_register(IpcManager *ipc, int player_id) {
   game_msg.type = ev_player_register;
   game_msg.player_id = player_id;
   game_write_message();
   ipc_sendto_server(ipc, msg_buff);
 }
 
+void game_send_player_definition(IpcManager *ipc, int player_id, GameDef *def){
 
-GameMsg *game_read_client_event(IpcManager *ipc, int expected_ev){
+}
+
+GameMsg *game_read_client_event(IpcManager *ipc, int expected_ev) {
   ipc_getfrom_client(ipc, msg_buff);
   sscanf(msg_buff, MSG_FORMAT, &(game_msg.type), &(game_msg.player_id));
   assertion((expected_ev & game_msg.type) != 0 && "Unexpected event type");
   return &game_msg;
 }
 
-GameMsg *game_read_server_event(IpcManager *ipc, int client, int expected_ev){
+GameMsg *game_read_server_event(IpcManager *ipc, int client, int expected_ev) {
   ipc_getfrom_server(ipc, msg_buff, client);
   sscanf(msg_buff, MSG_FORMAT, &(game_msg.type), &(game_msg.player_id));
   assertion((expected_ev & game_msg.type) != 0 && "Unexpected event type");
   return &game_msg;
 }
-
 
 #endif // ESCROOM_GAME_H

@@ -22,5 +22,6 @@ add_library(messaging messaging.c)
 add_library(game game.c)
 add_executable(manager game_server.c)
 add_executable(player game_client.c)
+add_executable(test test.c)
 
 install(TARGETS DESTINATION .)

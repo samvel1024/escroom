@@ -33,7 +33,7 @@ void wait_players() {
     log_debug("Registered player %d", msg->player_id);
   }
   for (int i = 0; i < game->player_count; ++i) {
-    game_send_server_started(ipc, i);
+    game_send_server_welcome(ipc, i);
   }
   log_debug("Notified all clients");
 }
@@ -41,7 +41,6 @@ void wait_players() {
 void start_game() {
 
 }
-
 int main() {
   open_debug_input();
   log_init("Manager");

@@ -9,7 +9,7 @@
 #include <semaphore.h>
 #include "utils.h"
 
-#define MSG_BUFF_LEN 7000
+#define MSG_BUFF_LEN 6000
 #define MAX_CLIENTS 1025
 #define TOKEN_BUFF_SIZE 40
 
