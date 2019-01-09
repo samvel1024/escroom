@@ -54,6 +54,20 @@ void game_def_init(GameDef *def) {
   def->ids[0] = NONE;
 }
 
+char *game_def_to_string(GameDef *def, char *buff) {
+  buff[0] = '\0';
+  sprintf(buff + strlen(buff), "room_type=%c ", def->room_type);
+  for (int i = 0; i < MAX_TYPES; ++i) {
+    if (def->types[i] > 0) {
+      sprintf(buff + strlen(buff), "type_%c=%d ", 'A' + i, def->types[i]);
+    }
+  }
+  for (int i = 0; def->ids[i] != NONE; ++i) {
+    sprintf(buff + strlen(buff), "id_%d=%d ", i, def->ids[i]);
+  }
+  return buff;
+}
+
 GameDef *game_def_read_next(GameDef *def, FILE *f) {
   if (feof(f))
     return NULL;
@@ -266,8 +280,6 @@ typedef struct game_message {
 GameMsg buff_msg;
 const int MSG_SIZE = sizeof(GameMsg);
 
-
-
 void game_send_server_welcome(IpcManager *ipc, int client) {
   buff_msg.type = ev_server_welcome;
   buff_msg.player_id = NONE;
@@ -282,7 +294,7 @@ void game_send_player_register(IpcManager *ipc, int player_id) {
   ipc_sendto_server(ipc, &buff_msg, MSG_SIZE);
 }
 
-void game_send_player_definition(IpcManager *ipc, int player_id, GameDef *def){
+void game_send_player_definition(IpcManager *ipc, int player_id, GameDef *def) {
   buff_msg.type = ev_player_definition;
   buff_msg.player_id = player_id;
   memcpy(&(buff_msg.game_def), def, sizeof(GameDef));

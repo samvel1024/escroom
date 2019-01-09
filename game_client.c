@@ -24,9 +24,9 @@ void game_loop() {
   game_read_server_event(ipc, player_id, ev_server_welcome);
   log_debug("Got game started message");
   GameDef *d = game_def_read_next(&def, stdin);
-
+  char bff[1000000];
   while (d != NULL) {
-    log_debug("Sending game definition");
+    log_debug("Sending game definition %s", game_def_to_string(d, bff));
     game_send_player_definition(ipc, player_id, d);
     d = game_def_read_next(&def, stdin);
   }
