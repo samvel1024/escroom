@@ -28,6 +28,7 @@ void game_loop(){
   while(stdin != NULL) {
     GameDef *d = game_def_read_next(&def, stdin);
     if (d != NULL){
+      log_debug("Sending game definition");
       game_send_player_definition(ipc, player_id, d);
     }
 
