@@ -1,6 +1,5 @@
 #include "messaging.h"
 #include "game.h"
-#include <ctype.h>
 
 GameDef def;
 Game *game;
@@ -17,20 +16,19 @@ void open_input(int id) {
   freopen(p, "r", stdin);
 }
 
-
-void game_loop(){
+void game_loop() {
   char c;
-  scanf("%c", &c);
+  scanf("%c\n", &c);
   game_init_player(game, player_id, c);
   game_send_player_register(ipc, player_id);
   game_read_server_event(ipc, player_id, ev_server_welcome);
   log_debug("Got game started message");
-  while(stdin != NULL) {
-    GameDef *d = game_def_read_next(&def, stdin);
-    if (d != NULL){
-      game_send_player_definition(ipc, player_id, d);
-    }
-
+  GameDef *d = game_def_read_next(&def, stdin);
+  char bff[1000000];
+  while (d != NULL) {
+    log_debug("Sending game definition %s", game_def_to_string(d, bff));
+    game_send_player_definition(ipc, player_id, d);
+    d = game_def_read_next(&def, stdin);
   }
 }
 
@@ -47,4 +45,5 @@ int main(int argc, char **argv) {
   ipc = ipc_create(false, "es", player_id);
   game_loop();
   ipc_close(ipc);
+  log_debug("Finishing gracefully");
 }
