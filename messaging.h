@@ -10,7 +10,7 @@
 #include "utils.h"
 
 #define MSG_BUFF_LEN 6000
-#define MAX_CLIENTS 1025
+#define MAX_CLIENTS 105
 #define TOKEN_BUFF_SIZE 40
 
 /******************************* Synchronization objects ***************************
@@ -51,7 +51,6 @@ MsgSynch *synch_create_server(char *prefix) {
   s->prefix = malloc(strlen(prefix) + 1);
   strcpy(s->prefix, prefix);
 
-  //TODO Optimize clients by holding only pointer to his/her semaphore
   s->clients_empty = malloc(sizeof(void *) * MAX_CLIENTS);
   s->clients_full = malloc(sizeof(void *) * MAX_CLIENTS);
   for (int i = 0; i < MAX_CLIENTS; ++i) {
@@ -138,7 +137,7 @@ void msgb_close(MsgBuffer *buffer) {
 /**
  * Brings all above structs together to provide a uniform API for creation and destruction
  */
-typedef struct ipc_manage {
+typedef struct ipc_manager {
   MsgBuffer *buff;
   MsgSynch *synch;
   bool is_server;
@@ -161,34 +160,34 @@ void ipc_close(IpcManager *mngr) {
   free(mngr);
 }
 
-void ipc_getfrom_server(IpcManager *m, char *buff, int client_id) {
+void ipc_getfrom_server(IpcManager *m, void *buff, int size, int client_id) {
   assertion(!m->is_server && "Only client can call this procedure");
   sem_wait(m->synch->my_client_full);
-  strcpy(buff, m->buff->clients[client_id]);
+  memcpy(buff, m->buff->clients[client_id], size);
   sem_post(m->synch->my_client_empty);
 }
 
-void ipc_sendto_client(IpcManager *m, char *msg, int client_id) {
+void ipc_sendto_client(IpcManager *m, void *msg, int size, int client_id) {
   assertion(m->is_server && "Only server can call this procedure");
-  assertion(strlen(msg) < MSG_BUFF_LEN - 1 && "Message is too long");
+  assertion(size < MSG_BUFF_LEN && "Message is too long");
   sem_wait(m->synch->clients_empty[client_id]);
-  strcpy(m->buff->clients[client_id], msg);
+  memcpy(m->buff->clients[client_id], msg, size);
   sem_post(m->synch->clients_full[client_id]);
 }
 
-void ipc_getfrom_client(IpcManager *m, char *buff) {
+void ipc_getfrom_client(IpcManager *m, void *buff, int size) {
   assertion(m->is_server && "Only server can call this procedure");
   sem_wait(m->synch->server_full);
-  strcpy(buff, m->buff->server);
+  memcpy(buff, m->buff->server, size);
   sem_post(m->synch->server_empty);
 }
 
-void ipc_sendto_server(IpcManager *m, char *msg) {
+void ipc_sendto_server(IpcManager *m, void *msg, int size) {
   assertion(!m->is_server && "Only client can call this procedure");
-  assertion(strlen(msg) < MSG_BUFF_LEN - 1 && "Message is too long");
+  assertion(size < MSG_BUFF_LEN && "Message is too long");
   sem_wait(m->synch->server_mutex);
   sem_wait(m->synch->server_empty);
-  strcpy(m->buff->server, msg);
+  memcpy(m->buff->server, msg, size);
   sem_post(m->synch->server_full);
   sem_post(m->synch->server_mutex);
 }
