@@ -20,7 +20,7 @@ void open_input(int id) {
 
 void game_loop(){
   char c;
-  scanf("%c", &c);
+  scanf("%c\n", &c);
   game_init_player(game, player_id, c);
   game_send_player_register(ipc, player_id);
   game_read_server_event(ipc, player_id, ev_server_welcome);
