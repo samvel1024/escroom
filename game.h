@@ -285,7 +285,7 @@ int game_start_if_possible(Game *g, GameDef *def) {
   memcpy(wanted_types, def->types, sizeof(wanted_types));
   for (int i = 0; i < g->player_count; ++i) { //TODO change i initial value to be more fair
     Player *p = &g->players[i];
-    int p_type = p->type = 'A';
+    int p_type = p->type - 'A';
     if (wanted_types[p_type] > 0 && p->in_room == NONE && !selected[i]) {
       wanted_types[p_type]--;
       append_arr(player_arr, &len, i);
