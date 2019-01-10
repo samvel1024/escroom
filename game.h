@@ -61,14 +61,16 @@ void game_def_init(GameDef *def) {
 char *game_def_to_string(GameDef *def, char *buff) {
   buff[0] = '\0';
   sprintf(buff + strlen(buff), "room_type=%c created_by=%d ", def->room_type, def->created_by);
+  sprintf(buff + strlen(buff), "types={");
   for (int i = 0; i < MAX_TYPES; ++i) {
     if (def->types[i] > 0) {
-      sprintf(buff + strlen(buff), "type_%c=%d ", 'A' + i, def->types[i]);
+      sprintf(buff + strlen(buff), "%c:%d ", 'A' + i, def->types[i]);
     }
   }
-  for (int i = 0; def->ids[i] != NONE; ++i) {
-    sprintf(buff + strlen(buff), "id_%d=%d ", i, def->ids[i]);
-  }
+  sprintf(buff + strlen(buff), "} ");
+  sprintf(buff + strlen(buff), "ids={");
+  char b[5000];
+  sprintf(buff + strlen(buff), "%s}",  arr_to_str(def->ids, NONE, b));
   return buff;
 }
 
@@ -149,6 +151,7 @@ void game_init_player(Game *g, int p, int t) {
   assertion(p < g->player_count && 'A' <= t && 'Z' >= t);
   g->players[p].type = t;
   g->players[p].finished = false;
+  g->players[p].in_room = NONE;
 }
 
 bool game_player_finished(Game *g, int p){
@@ -174,7 +177,8 @@ void game_define_new_game(Game *g, int room, int owner, int *players) {
     r->players_inside[i] = players[i];
     r->waiting_game_size++;
   }
-  log_debug("Defined a game in room owned by r=%d own=%d players=%s", room, owner);
+  char msg[5000];
+  log_debug("Defined a game in room owned by r=%d own=%d players=%s", room, owner, arr_to_str(players, NONE,msg ));
 }
 
 bool game_add_player_to_waiting_list(Game *g, int room, int player) {
@@ -457,7 +461,7 @@ void game_send_player_definition(IpcManager *ipc, int player_id, GameDef *def) {
 
 void game_send_player_joining_room(IpcManager *ipc, int player_id, int room_id) {
   game_msg_init(&buff_msg);
-  buff_msg.type = ev_player_leaving_room;
+  buff_msg.type = ev_player_joining_room;
   buff_msg.room_id = room_id;
   buff_msg.player_id = player_id;
   ipc_sendto_server(ipc, &buff_msg, MSG_SIZE);
@@ -474,16 +478,16 @@ void game_send_player_leaving_room(IpcManager *ipc, int player_id){
 /******************************* Receiving events  *********************************
  ***********************************************************************************/
 
-GameMsg *game_receive_client_event(IpcManager *ipc, int expected_ev) {
-  ipc_getfrom_client(ipc, &buff_msg, MSG_SIZE);
-  assertion((expected_ev & buff_msg.type) != 0 && "Unexpected event type");
-  return &buff_msg;
+GameMsg *game_receive_client_event(IpcManager *ipc, int expected_ev, GameMsg *msg) {
+  ipc_getfrom_client(ipc, msg, MSG_SIZE);
+  assertion((expected_ev & msg->type) != 0 && "Unexpected event type");
+  return msg;
 }
 
-GameMsg *game_receive_server_event(IpcManager *ipc, int client, int expected_ev) {
-  ipc_getfrom_server(ipc, &buff_msg, MSG_SIZE, client);
-  assertion((expected_ev & buff_msg.type) != 0 && "Unexpected event type");
-  return &buff_msg;
+GameMsg *game_receive_server_event(IpcManager *ipc, int client, int expected_ev, GameMsg *msg) {
+  ipc_getfrom_server(ipc, msg, MSG_SIZE, client);
+  assertion((expected_ev & msg->type) != 0 && "Unexpected event type");
+  return msg;
 }
 
 #endif // ESCROOM_GAME_H

@@ -2,6 +2,7 @@
 #include "game.h"
 
 GameDef def_buff;
+GameMsg msg_buff;
 IpcManager *ipc;
 int player_id;
 char debug_str[10000];
@@ -23,7 +24,7 @@ void game_loop() {
   bool end = false;
   while (!end) {
     GameMsg *msg =
-        game_receive_server_event(ipc, player_id, ev_server_accepting_defs | ev_server_invite_room | ev_server_finished);
+        game_receive_server_event(ipc, player_id, ev_server_accepting_defs | ev_server_invite_room | ev_server_finished, &msg_buff);
     switch (msg->type) {
       case ev_server_accepting_defs: {
         bool send_again = true;
@@ -34,7 +35,7 @@ void game_loop() {
             send_again = false;
           } else {
             game_send_player_definition(ipc, player_id, def);
-            GameMsg *resp = game_receive_server_event(ipc, player_id, ev_server_received_def);
+            GameMsg *resp = game_receive_server_event(ipc, player_id, ev_server_received_def, &msg_buff);
             send_again = !resp->def_valid;
             if (!resp->def_valid){
               log_debug("Illegal game def: %s", game_def_to_string(def, debug_str));
@@ -46,9 +47,10 @@ void game_loop() {
         break;
       }
       case ev_server_invite_room: {
+        log_debug("Joining...");
         game_send_player_joining_room(ipc, player_id, msg->room_id);
-        GameMsg *resp = game_receive_server_event(ipc, player_id, ev_server_wait_for_players);
-        log_debug("Waiting in room %d , player list %s", resp->room_id, arr_to_str(resp->players_in_room, -1, debug_str));
+        GameMsg *resp = game_receive_server_event(ipc, player_id, ev_server_wait_for_players, &msg_buff);
+        log_debug("Waiting in room %d , player list %s", resp->room_id, arr_to_str(resp->players_in_room, NONE, debug_str));
         int m_index = NONE;
         for(int i=0; resp->players_in_room[i] != NONE; ++i){
           if (resp->players_in_room[i] == player_id){
@@ -57,8 +59,8 @@ void game_loop() {
           }
         }
         assertion(m_index != NONE);
-        log_debug("Waiting for players %s", arr_to_str(&resp->players_in_room[m_index+1], -1, debug_str));
-        game_receive_server_event(ipc, player_id, ev_server_room_started);
+        log_debug("Waiting for players %s", arr_to_str(&resp->players_in_room[m_index+1], NONE, debug_str));
+        game_receive_server_event(ipc, player_id, ev_server_room_started, &msg_buff);
         //Game started
         game_send_player_leaving_room(ipc, player_id);
         break;
@@ -81,7 +83,7 @@ int main(int argc, char **argv) {
   open_input(player_id);
 
   log_init(buff);
-  ipc = ipc_create(false, "es", player_id);
+  ipc = ipc_create(false, "e1", player_id);
   game_loop();
   ipc_close(ipc);
   log_debug("Finishing gracefully");

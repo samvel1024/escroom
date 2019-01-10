@@ -14,6 +14,7 @@ typedef struct list_node_t {
 
 Game *game;
 IpcManager *ipc;
+GameMsg msg_buff;
 Node head;
 Node *tail = &head;
 char debug_buff[10000];
@@ -38,6 +39,7 @@ int start_playable() {
       prev->next = curr->next;
       return room;
     }
+    prev = prev->next;
   }
   return NONE;
 }
@@ -79,7 +81,7 @@ void notify_if_any_playable() {
 
 void game_loop() {
   for (int i = 0; i < game->player_count; ++i) {
-    GameMsg *msg = game_receive_client_event(ipc, ev_player_register);
+    GameMsg *msg = game_receive_client_event(ipc, ev_player_register, &msg_buff);
     game_init_player(game, msg->player_id, msg->player_type);
     log_debug("Registered player %d", msg->player_id);
   }
@@ -93,7 +95,7 @@ void game_loop() {
     GameMsg *msg = game_receive_client_event(ipc, ev_player_joining_room |
         ev_player_def |
         ev_player_leaving_room |
-        ev_player_finished);
+        ev_player_finished, &msg_buff);
 
     switch (msg->type) {
       case ev_player_def: {
@@ -131,8 +133,8 @@ void game_loop() {
           for (int i = 0; i < game->player_count; ++i) {
             game_send_server_finished(ipc, i);
           }
+          end = tail == &head;
         }
-        end = true;
         break;
       }
       default: assertion(false && "Illegal value of event");
@@ -146,7 +148,7 @@ int main() {
   int players, rooms;
   scanf("%d %d\n", &players, &rooms);
   game = game_init(players, rooms);
-  ipc = ipc_create(true, "es", -1);
+  ipc = ipc_create(true, "e1", -1);
   init_rooms();
   spawn_players();
   game_loop();

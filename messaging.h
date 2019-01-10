@@ -184,7 +184,6 @@ void ipc_getfrom_client(IpcManager *m, void *buff, int size) {
 
 void ipc_sendto_server(IpcManager *m, void *msg, int size) {
   assertion(!m->is_server && "Only client can call this procedure");
-  printf("size=%d\n", size);
   assertion(size < MSG_BUFF_LEN && "Message is too long");
   sem_wait(m->synch->server_mutex);
   sem_wait(m->synch->server_empty);
