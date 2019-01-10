@@ -50,7 +50,7 @@ void game_loop() {
   while (stdin != NULL) {
       GameMsg *msg = game_read_client_event(ipc, ev_player_definition);
       log_debug("def from %d: %s", msg->player_id, game_def_to_string(&msg->game_def, bff));
-      bool ok =  game_is_playable(game, &msg->game_def, msg->player_id);
+      bool ok = game_is_ever_playable(game, &msg->game_def, msg->player_id);
       log_debug("Def from player %d is ok %d", msg->player_id, ok);
   }
 

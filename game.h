@@ -3,6 +3,7 @@
 #define ESCROOM_GAME_H
 
 #include <stdbool.h>
+#include <limits.h>
 #include <ctype.h>
 #include "utils.h"
 #include "messaging.h"
@@ -12,6 +13,7 @@
 #define MAX_TYPES 26
 #define MSG_BUFFER_SIZE 10000
 #define NONE -1
+
 
 typedef struct room_t {
   //
@@ -167,7 +169,7 @@ void game_define_new_game(Game *g, int room, int owner, int *players) {
     r->players_inside[i] = players[i];
     r->waiting_game_size++;
   }
-  log_debug("Defined a game in room owned by r=%d own=%d", room, owner);
+  log_debug("Defined a game in room owned by r=%d own=%d players=%s", room, owner);
 }
 
 bool game_add_player_to_waiting_list(Game *g, int room, int player) {
@@ -211,7 +213,7 @@ int game_find_room(Game *g, int type) {
   return NONE;
 }
 
-bool game_is_playable(Game *g, GameDef *def, int player_id) {
+bool game_is_ever_playable(Game *g, GameDef *def, int player_id) {
   assertion(player_id < g->player_count && player_id >= 0);
   if (game_find_room(g, def->room_type) == NONE)
     return false;
@@ -236,6 +238,75 @@ bool game_is_playable(Game *g, GameDef *def, int player_id) {
       return false;
   }
   return true;
+}
+
+void append_arr(int *arr, int *len, int val){
+  arr[*len] = val;
+  arr[*len+1] = NONE;
+  (*len)++;
+}
+
+int game_start_if_possible(Game *g, GameDef *def, int player_id) {
+  // The owner of the definition has to be free
+  if (g->players[player_id].in_room != NONE)
+    return NONE;
+
+  // iff Selected[i] then player i will take part in the game
+  bool selected[MAX_PLAYERS];
+  for(int i=0; i<MAX_PLAYERS; ++i)
+    selected[i] = false;
+  int player_arr[MAX_PLAYERS];
+  int len = 0;
+  player_arr[0] = NONE;
+
+  // Make sure all the directly specified players are free
+  for (int i = 0; def->ids[i] != NONE; ++i) {
+    if (g->players[def->ids[i]].in_room != NONE && !selected[def->ids[i]]) {
+      log_debug("Cannot play def by player %d, cannot find players by ids", player_id);
+      return NONE;
+    }
+    else {
+      selected[i] = true;
+      append_arr(player_arr, &len, def->ids[i]);
+    }
+  }
+
+  // Choose players by their type
+  int wanted_types[MAX_TYPES];
+  memcpy(wanted_types, def->types, sizeof(wanted_types));
+  for(int i=0; i<g->player_count; ++i){ //TODO change i initial value to be more fair
+    Player *p = &g->players[i];
+    int p_type = p->type = 'A';
+    if (wanted_types[p_type] > 0 && p->in_room == NONE && !selected[i]){
+      wanted_types[p_type]--;
+      append_arr(player_arr, &len, i);
+    }
+  }
+  for(int i=0; i<MAX_TYPES; ++i){
+    if (wanted_types[i] > 0){
+      log_debug("Cannot play def by player %d, cannot find players by types", player_id);
+      return NONE;
+    }
+  }
+
+  //Choose the room
+  int r_id = NONE;
+  int r_cap = INT_MAX;
+  for(int i=0; i<g->room_count; ++i){
+    Room *r = &g->rooms[i];
+    if (r->type == def->room_type && r->max_size >= len && r_cap > r->max_size){
+      r_cap = r->max_size;
+      r_id = i;
+    }
+  }
+
+  if (r_id == NONE){
+    log_debug("Cannot play def by player %d, lack of rooms", player_id);
+    return false;
+  }
+
+  game_define_new_game(g, r_id, player_id, player_arr);
+  return r_id;
 }
 
 bool game_player_leave_room(Game *g, int player) {
