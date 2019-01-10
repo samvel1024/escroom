@@ -256,9 +256,9 @@ void append_arr(int *arr, int *len, int val) {
 }
 
 int game_start_if_possible(Game *g, GameDef *def) {
-  int player_id = def->created_by;
+  int owner_id = def->created_by;
   // The owner of the definition has to be free
-  if (g->players[player_id].in_room != NONE)
+  if (g->players[owner_id].in_room != NONE)
     return NONE;
 
   // iff Selected[i] then player i will take part in the game
@@ -272,7 +272,7 @@ int game_start_if_possible(Game *g, GameDef *def) {
   // Make sure all the directly specified players are free
   for (int i = 0; def->ids[i] != NONE; ++i) {
     if (g->players[def->ids[i]].in_room != NONE && !selected[def->ids[i]]) {
-      log_debug("Cannot play def by player %d, cannot find players by ids", player_id);
+      log_debug("Cannot play def by player %d, cannot find players by ids", owner_id);
       return NONE;
     } else {
       selected[i] = true;
@@ -293,7 +293,7 @@ int game_start_if_possible(Game *g, GameDef *def) {
   }
   for (int i = 0; i < MAX_TYPES; ++i) {
     if (wanted_types[i] > 0) {
-      log_debug("Cannot play def by player %d, cannot find players by types", player_id);
+      log_debug("Cannot play def by player %d, cannot find players by types", owner_id);
       return NONE;
     }
   }
@@ -310,11 +310,11 @@ int game_start_if_possible(Game *g, GameDef *def) {
   }
 
   if (r_id == NONE) {
-    log_debug("Cannot play def by player %d, lack of rooms", player_id);
+    log_debug("Cannot play def by player %d, lack of rooms", owner_id);
     return false;
   }
 
-  game_define_new_game(g, r_id, player_id, player_arr);
+  game_define_new_game(g, r_id, owner_id, player_arr);
   return r_id;
 }
 

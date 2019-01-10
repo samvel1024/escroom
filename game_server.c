@@ -83,7 +83,7 @@ void game_loop() {
   for (int i = 0; i < game->player_count; ++i) {
     GameMsg *msg = game_receive_client_event(ipc, ev_player_register, &msg_buff);
     game_init_player(game, msg->player_id, msg->player_type);
-    log_debug("Registered player %d", msg->player_id);
+    log_debug("Registered player %d type %c", msg->player_id, game->players[msg->player_id].type);
   }
   for (int i = 0; i < game->player_count; ++i) {
     game_send_server_accepting_defs(ipc, i);
