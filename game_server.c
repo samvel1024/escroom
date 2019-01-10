@@ -163,6 +163,7 @@ int main() {
   wait(NULL);
   ipc_close(ipc);
   log_debug("Finishing gracefully");
+  game_destroy(game);
 }
 
 
