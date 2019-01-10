@@ -85,6 +85,7 @@ GameDef *game_def_read_next(GameDef *def, FILE *f, int player_id) {
   int ids = 0;
   char *token = strtok(line, " \n");
   game_def_init(def);
+  def->ids[ids++] = player_id;
   while (token != NULL) {
     if (token == line) { // room type (has to be the first)
       assertion(strlen(token) == 1 && "Type of the room cannot be longer than 1 char");
@@ -486,6 +487,9 @@ GameMsg *game_receive_client_event(IpcManager *ipc, int expected_ev, GameMsg *ms
 
 GameMsg *game_receive_server_event(IpcManager *ipc, int client, int expected_ev, GameMsg *msg) {
   ipc_getfrom_server(ipc, msg, MSG_SIZE, client);
+  if ((expected_ev & msg->type) == 0){
+    log_debug("Error: expected %d but got %d", expected_ev, msg->type);
+  }
   assertion((expected_ev & msg->type) != 0 && "Unexpected event type");
   return msg;
 }

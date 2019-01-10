@@ -17,6 +17,15 @@ void open_input(int id) {
   freopen(p, "r", stdin);
 }
 
+void read_and_send_def() {
+  GameDef *def = game_def_read_next(&def_buff, stdin, player_id);
+  if (def == NULL) {
+    game_send_player_finished(ipc, player_id);
+  } else {
+    game_send_player_definition(ipc, player_id, def);
+  }
+}
+
 void game_loop() {
   char c;
   scanf("%c\n", &c);
@@ -24,51 +33,50 @@ void game_loop() {
   bool end = false;
   while (!end) {
     log_debug("Waiting for base events");
-    GameMsg *msg =
-        game_receive_server_event(ipc, player_id, ev_server_accepting_defs | ev_server_invite_room | ev_server_finished, &msg_buff);
+    GameMsg *msg = game_receive_server_event(ipc, player_id, ev_server_accepting_defs |
+                                                 ev_server_received_def |
+                                                 ev_server_invite_room |
+                                                 ev_server_wait_for_players |
+                                                 ev_server_room_started |
+                                                 ev_server_finished,
+                                             &msg_buff);
     switch (msg->type) {
       case ev_server_accepting_defs: {
-        bool send_again = true;
-        while (send_again) {
-          GameDef *def = game_def_read_next(&def_buff, stdin, player_id);
-          if (def == NULL) {
-            game_send_player_finished(ipc, player_id);
-            send_again = false;
-          } else {
-            game_send_player_definition(ipc, player_id, def);
-            log_debug("Waiting for def response");
-            GameMsg *resp = game_receive_server_event(ipc, player_id, ev_server_received_def, &msg_buff);
-            send_again = !resp->def_valid;
-            if (!resp->def_valid){
-              log_debug("Illegal game def: %s", game_def_to_string(def, debug_str));
-            }else {
-              log_debug("Game def was added to queue: %s", game_def_to_string(def, debug_str));
-            }
-          }
+        read_and_send_def();
+        break;
+      }
+      case ev_server_received_def: {
+        if (!msg->def_valid) {
+          read_and_send_def();
         }
         break;
       }
       case ev_server_invite_room: {
-        log_debug("Joining...");
+        log_debug("Got invite to join room %d", msg->room_id);
         game_send_player_joining_room(ipc, player_id, msg->room_id);
-        log_debug("Waiting for join response");
-        GameMsg *resp = game_receive_server_event(ipc, player_id, ev_server_wait_for_players, &msg_buff);
-        log_debug("Waiting in room %d , player list %s", resp->room_id, arr_to_str(resp->players_in_room, NONE, debug_str));
+        break;
+      }
+      case ev_server_wait_for_players: {
+        log_debug("Waiting in room %d , player list %s",
+                  msg->room_id,
+                  arr_to_str(msg->players_in_room, NONE, debug_str));
         int m_index = NONE;
-        for(int i=0; resp->players_in_room[i] != NONE; ++i){
-          if (resp->players_in_room[i] == player_id){
+        for (int i = 0; msg->players_in_room[i] != NONE; ++i) {
+          if (msg->players_in_room[i] == player_id) {
             m_index = i;
             break;
           }
         }
         assertion(m_index != NONE);
-        log_debug("Waiting for players %s", arr_to_str(&resp->players_in_room[m_index+1], NONE, debug_str));
-        game_receive_server_event(ipc, player_id, ev_server_room_started, &msg_buff);
-        //Game started
-        game_send_player_leaving_room(ipc, player_id);
+        log_debug("Waiting for players %s", arr_to_str(&msg->players_in_room[m_index + 1], NONE, debug_str));
         break;
       }
+      case ev_server_room_started : {
+        log_debug("Game finished in room %d", msg->room_id);
+        game_send_player_leaving_room(ipc, player_id);
+      }
       case ev_server_finished: {
+        log_debug("Server finished");
         end = true;
         break;
       }
