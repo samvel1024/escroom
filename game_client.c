@@ -23,6 +23,7 @@ void game_loop() {
   game_send_player_register(ipc, player_id, c);
   bool end = false;
   while (!end) {
+    log_debug("Waiting for base events");
     GameMsg *msg =
         game_receive_server_event(ipc, player_id, ev_server_accepting_defs | ev_server_invite_room | ev_server_finished, &msg_buff);
     switch (msg->type) {
@@ -35,6 +36,7 @@ void game_loop() {
             send_again = false;
           } else {
             game_send_player_definition(ipc, player_id, def);
+            log_debug("Waiting for def response");
             GameMsg *resp = game_receive_server_event(ipc, player_id, ev_server_received_def, &msg_buff);
             send_again = !resp->def_valid;
             if (!resp->def_valid){
@@ -49,6 +51,7 @@ void game_loop() {
       case ev_server_invite_room: {
         log_debug("Joining...");
         game_send_player_joining_room(ipc, player_id, msg->room_id);
+        log_debug("Waiting for join response");
         GameMsg *resp = game_receive_server_event(ipc, player_id, ev_server_wait_for_players, &msg_buff);
         log_debug("Waiting in room %d , player list %s", resp->room_id, arr_to_str(resp->players_in_room, NONE, debug_str));
         int m_index = NONE;
