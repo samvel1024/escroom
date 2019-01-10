@@ -37,6 +37,9 @@ int start_playable() {
       log_debug("Started game defined as: %s", game_def_to_string(&(curr->def), debug_buff));
       free(curr);
       prev->next = curr->next;
+      if (prev->next == NULL){
+        tail = prev;
+      }
       return room;
     }
     prev = prev->next;
