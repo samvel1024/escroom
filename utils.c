@@ -32,6 +32,22 @@ void log_debug(const char *format, ...) {
   va_end(args);
 }
 
+
+char *arr_to_str(int *arr, int end, char *buff){
+  int len = 1;
+  sprintf(buff, "(");
+  char num_buff[20];
+  for(int i=0; arr[i] != end; ++i){
+    sprintf(num_buff, i == 0 ? "%d": ", %d", arr[i]);
+    size_t num_len = strlen(num_buff);
+    sprintf(buff + len, "%s", num_buff);
+    len += num_len;
+  }
+  sprintf(buff + len , "%c", ')');
+  return buff;
+}
+
+
 #else
 void log_debug(const char *format, ...) {}
 #endif

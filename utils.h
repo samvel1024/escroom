@@ -44,4 +44,6 @@ void log_init(char *);
 
 void log_debug(const char *format, ...);
 
+char *arr_to_str(int *arr, int end, char *buff);
+
 #endif // ESCROOM_UTILS_H
