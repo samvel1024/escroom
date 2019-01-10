@@ -102,6 +102,7 @@ void game_loop() {
 
     switch (msg->type) {
       case ev_player_def: {
+        log_debug("ev_player_def: Got def from player %d", msg->player_id);
         bool ok = game_is_ever_playable(game, &msg->game_def, msg->player_id);
         game_send_server_received_def(ipc, msg->player_id, ok);
         if (ok) {
@@ -111,6 +112,7 @@ void game_loop() {
         break;
       }
       case ev_player_joining_room: {
+        log_debug("ev_player_joining_room: Player %d joined room %d", msg->player_id, msg->room_id);
         bool started = game_add_player_to_waiting_list(game, msg->room_id, msg->player_id);
         game_send_server_wait_for_players(ipc, msg->player_id, msg->room_id, game);
         if (started) {
@@ -122,7 +124,8 @@ void game_loop() {
         break;
       }
       case ev_player_leaving_room: {
-        int room_defined_by = game->rooms[game->players[msg->player_id].in_room].defined_by;
+        log_debug("ev_player_leaving_room: Player %d left room %d", msg->player_id, msg->room_id);
+        int room_defined_by = game->rooms[game->players[msg->player_id].assigned_room].defined_by;
         bool room_empty = game_player_leave_room(game, msg->player_id);
         if (room_empty) {
           game_send_server_accepting_defs(ipc, room_defined_by);
@@ -131,6 +134,7 @@ void game_loop() {
         break;
       }
       case ev_player_finished: {
+        log_debug("ev_player_finished: Player %d finished", msg->player_id);
         bool game_finished = game_player_finished(game, msg->player_id);
         if (game_finished) {
           for (int i = 0; i < game->player_count; ++i) {

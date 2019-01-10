@@ -42,12 +42,16 @@ void game_loop() {
                                              &msg_buff);
     switch (msg->type) {
       case ev_server_accepting_defs: {
+        log_debug("Sending def to server");
         read_and_send_def();
         break;
       }
       case ev_server_received_def: {
         if (!msg->def_valid) {
+          log_debug("Resending def to server");
           read_and_send_def();
+        }else {
+          log_debug("Def was accepted by server");
         }
         break;
       }
@@ -74,6 +78,7 @@ void game_loop() {
       case ev_server_room_started : {
         log_debug("Game finished in room %d", msg->room_id);
         game_send_player_leaving_room(ipc, player_id);
+        break;
       }
       case ev_server_finished: {
         log_debug("Server finished");

@@ -30,8 +30,8 @@ typedef struct player_t {
   int id;
   int type;
   // Mutable
-  int in_room;
-  bool finished;
+  int assigned_room;
+  bool busy;
 
 } Player;
 
@@ -104,7 +104,7 @@ GameDef *game_def_read_next(GameDef *def, FILE *f, int player_id) {
 }
 
 void player_set_free(Player *p) {
-  p->in_room = 0;
+  p->assigned_room = NONE;
 }
 
 void room_set_empty(Room *r) {
@@ -151,12 +151,10 @@ void game_init_room(Game *g, int room, int type, int size) {
 void game_init_player(Game *g, int p, int t) {
   assertion(p < g->player_count && 'A' <= t && 'Z' >= t);
   g->players[p].type = t;
-  g->players[p].finished = false;
-  g->players[p].in_room = NONE;
+  g->players[p].assigned_room = NONE;
 }
 
 bool game_player_finished(Game *g, int p){
-  g->players[p].finished = true;
   g->finished_players++;
   return g->finished_players == g->player_count;
 }
@@ -174,9 +172,10 @@ void game_define_new_game(Game *g, int room, int owner, int *players) {
   for (int i = 0; players[i] != NONE; ++i) {
     assertion((players[i] < g->player_count) && "Player out of range")
     Player *p = &(g->players[players[i]]);
-    assertion((p->in_room == NONE) && "Player is not free");
+    assertion((p->assigned_room == NONE) && "Player is not free");
     r->players_inside[i] = players[i];
     r->waiting_game_size++;
+    g->players[players[i]].assigned_room = room;
   }
   char msg[5000];
   log_debug("Defined a game in room owned by r=%d own=%d players=%s", room, owner, arr_to_str(players, NONE,msg ));
@@ -186,7 +185,7 @@ bool game_add_player_to_waiting_list(Game *g, int room, int player) {
   assertion((room < g->room_count && player < g->player_count) && "Indexes out of range");
   assertion((!g->rooms[room].game_started) && "Game is already started, cannot join the room");
   assertion((g->rooms[room].inside_count + 1 <= g->rooms[room].max_size) && "Room is full, cannot join");
-  assertion((g->players[player].in_room == NONE) && "The requested player is already busy playing");
+  assertion((g->players[player].assigned_room == room) && "The requested player is not assigned to this room");
 
   Room *r = &(g->rooms[room]);
   int player_index = NONE;
@@ -204,7 +203,7 @@ bool game_add_player_to_waiting_list(Game *g, int room, int player) {
   r->players_inside[player_index] = tmp;
 
   r->inside_count++;
-  g->players[player].in_room = room;
+  g->players[player].assigned_room = room;
 
   log_debug("Added player to waiting list of room. p=%d r=%d", player, room);
   if (r->inside_count == r->waiting_game_size) {
@@ -259,7 +258,7 @@ void append_arr(int *arr, int *len, int val) {
 int game_start_if_possible(Game *g, GameDef *def) {
   int owner_id = def->created_by;
   // The owner of the definition has to be free
-  if (g->players[owner_id].in_room != NONE)
+  if (g->players[owner_id].assigned_room != NONE)
     return NONE;
 
   // iff Selected[i] then player i will take part in the game
@@ -272,7 +271,7 @@ int game_start_if_possible(Game *g, GameDef *def) {
 
   // Make sure all the directly specified players are free
   for (int i = 0; def->ids[i] != NONE; ++i) {
-    if (g->players[def->ids[i]].in_room != NONE && !selected[def->ids[i]]) {
+    if (g->players[def->ids[i]].assigned_room != NONE && !selected[def->ids[i]]) {
       log_debug("Cannot play def by player %d, cannot find players by ids", owner_id);
       return NONE;
     } else {
@@ -287,7 +286,7 @@ int game_start_if_possible(Game *g, GameDef *def) {
   for (int i = 0; i < g->player_count; ++i) { //TODO change i initial value to be more fair
     Player *p = &g->players[i];
     int p_type = p->type - 'A';
-    if (wanted_types[p_type] > 0 && p->in_room == NONE && !selected[i]) {
+    if (wanted_types[p_type] > 0 && p->assigned_room == NONE && !selected[i]) {
       wanted_types[p_type]--;
       append_arr(player_arr, &len, i);
     }
@@ -322,14 +321,14 @@ int game_start_if_possible(Game *g, GameDef *def) {
 bool game_player_leave_room(Game *g, int player) {
   assertion((player < g->player_count) && "Player out of bounds");
   Player *p = &(g->players[player]);
-  assertion((p->in_room != NONE) && "Player is free, cannot leave a room");
-  Room *r = &(g->rooms[p->in_room]);
+  assertion((p->assigned_room != NONE) && "Player is free, cannot leave a room");
+  Room *r = &(g->rooms[p->assigned_room]);
   r->inside_count--;
-  log_debug("Player leaved room %d %d", player, p->in_room);
+  log_debug("Player leaved room %d %d", player, p->assigned_room);
   player_set_free(p);
   if (r->inside_count == 0) {
     room_set_empty(r);
-    log_debug("Game is finished in room %d", p->in_room);
+    log_debug("Game is finished in room %d", p->assigned_room);
   }
   return !r->game_started;
 }
