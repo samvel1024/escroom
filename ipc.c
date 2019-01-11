@@ -167,7 +167,8 @@ void async_enqueue(char *bytes, int size, int client) {
 
   if (q_head == NULL) {
     assertion(q_tail == NULL);
-    q_head = q_tail = new;
+    q_head = new;
+    q_tail = new;
   } else {
     assertion(q_tail != NULL && q_head != NULL);
     q_tail->next = new;
@@ -183,10 +184,11 @@ QNode *dequeue() {
     return NULL;
   }
   QNode *ans = q_head;
-  q_head = q_head->next;
-  if (q_tail == ans) {
+  if (q_head == q_tail) {
     q_tail = NULL;
     q_head = NULL;
+  }else {
+    q_head = q_head->next;
   }
   return ans;
 }
@@ -217,7 +219,6 @@ void join_out_thread() {
   pthread_cond_signal(&queue_not_empty);
   pthread_mutex_unlock(&lock);
   void *arg;
-  printf("Waiting to join");
   pthread_join(out_thread, &arg);
 }
 
