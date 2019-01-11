@@ -35,7 +35,6 @@ if (__expr_val == 0) {\
 #define assertion(expr)
 #endif
 
-
 void *shared_mem_get(char *name, unsigned long size, bool init);
 
 void shared_mem_close(char *mem_name, void *shared_mem, size_t size);

@@ -1,13 +1,14 @@
 #include "messaging.h"
-#include "game.h"
+
 #include <stdarg.h>
 
+#define BUFF_SIZE 7000
 GameDef def_buff;
 GameMsg msg_buff;
 IpcManager *ipc;
 short player_id;
-char str_buf[10000];
-char raw_input[10000];
+char str_buf[BUFF_SIZE];
+char raw_input[BUFF_SIZE];
 
 char *create_str(char *format, ...) {
   va_list args;
@@ -100,7 +101,7 @@ void game_loop() {
         assertion(m_index != NONE);
         log_debug("Waiting for players %s", arr_to_str(&msg->players_in_room[m_index + 1], NONE, str_buf));
         log_info("Entered room %d, game defined by %d, waiting for players %s\n", msg->room_id + 1,
-                 msg->room_owner + 1, arr_to_str(&players[m_index+1], NONE, str_buf));
+                 msg->room_owner + 1, arr_to_str(&players[m_index + 1], NONE, str_buf));
 
         break;
       }
@@ -122,12 +123,12 @@ void game_loop() {
 int main(int argc, char **argv) {
   assert(argc > 0 && "Count has to be greater than 0");
   player_id = (short) atoi(argv[1]);
-  char buff[MSG_BUFF_LEN];
-  sprintf(buff, "Player-%d", player_id);
 
+  char buff[20];
+  sprintf(buff, "Player-%d", player_id);
   open_input(player_id + 1);
   log_init(buff, open_output(player_id + 1));
-  ipc = ipc_create(false, "e1", player_id);
+  ipc = ipc_create(false, "e2", player_id);
   game_loop();
   ipc_close(ipc);
   log_debug("Finishing gracefully");
