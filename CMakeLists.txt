@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(escroom)
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "-g -Wall")
 
 macro(add_executable _name)
@@ -19,5 +19,5 @@ add_definitions(-DDEBUG -DENABLE_ASSERT)
 
 add_executable(manager game_server.c messaging.c messaging.h ipc.c ipc.h utils.c utils.h game.h game.c)
 add_executable(player game_client.c messaging.c messaging.h ipc.c ipc.h utils.c utils.h game.h game.c)
-add_executable(testgen testgen.cpp)
+#add_executable(testgen testgen.cpp)
 install(TARGETS DESTINATION .)
