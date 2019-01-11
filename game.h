@@ -74,7 +74,7 @@ char *game_def_to_string(GameDef *def, char *buff) {
   return buff;
 }
 
-GameDef *game_def_read_next(GameDef *def, FILE *f, int player_id) {
+GameDef *game_def_read_next(GameDef *def, FILE *f, int player_id, char *raw) {
   if (feof(f))
     return NULL;
   char buff[MSG_BUFF_LEN];
@@ -82,6 +82,8 @@ GameDef *game_def_read_next(GameDef *def, FILE *f, int player_id) {
   assertion(ferror(f) == 0 && "There was error reading the file")
   if (line == NULL)
     return NULL;
+  strcpy(raw, line);
+  strtok(raw, "\n");
   int ids = 0;
   char *token = strtok(line, " \n");
   game_def_init(def);
@@ -356,6 +358,7 @@ typedef struct game_message {
   int room_id;
   int players_in_room[MAX_PLAYERS];
   bool def_valid;
+  int room_owner;
   GameEventType type;
   GameDef game_def;
 } GameMsg;
@@ -370,6 +373,7 @@ void game_msg_init(GameMsg *msg) {
   msg->players_in_room[0] = NONE;
   msg->player_type = NONE;
   msg->def_valid = false;
+  msg->room_owner = NONE;
   game_def_init(&msg->game_def);
 }
 
@@ -413,6 +417,7 @@ void game_send_server_invite_room(IpcManager *ipc, int room_id, int player_id, G
   game_msg_init_players(g->rooms[room_id].players_inside);
   buff_msg.player_id = player_id;
   buff_msg.room_id = room_id;
+  buff_msg.room_owner = g->rooms[room_id].defined_by;
   ipc_sendto_client(ipc, &buff_msg, MSG_SIZE, player_id);
 }
 
@@ -422,6 +427,7 @@ void game_send_server_wait_for_players(IpcManager *ipc, int player_id, int room_
   buff_msg.type = ev_server_wait_for_players;
   buff_msg.room_id = room_id;
   buff_msg.player_id = player_id;
+  buff_msg.room_owner = g->rooms[room_id].defined_by;
   ipc_sendto_client(ipc, &buff_msg, MSG_SIZE, player_id);
 }
 

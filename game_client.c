@@ -6,6 +6,7 @@ GameMsg msg_buff;
 IpcManager *ipc;
 int player_id;
 char debug_str[10000];
+char raw_input[10000];
 
 void open_input(int id) {
   char p[40];
@@ -18,7 +19,7 @@ void open_input(int id) {
 }
 
 void read_and_send_def() {
-  GameDef *def = game_def_read_next(&def_buff, stdin, player_id);
+  GameDef *def = game_def_read_next(&def_buff, stdin, player_id, raw_input);
   if (def == NULL) {
     game_send_player_finished(ipc, player_id);
   } else {
@@ -48,9 +49,10 @@ void game_loop() {
       }
       case ev_server_received_def: {
         if (!msg->def_valid) {
+          log_info("Invalid game \"%s\"\n", raw_input);
           log_debug("Resending def to server");
           read_and_send_def();
-        }else {
+        } else {
           log_debug("Def was accepted by server");
         }
         break;
@@ -64,6 +66,15 @@ void game_loop() {
         log_debug("Waiting in room %d , player list %s",
                   msg->room_id,
                   arr_to_str(msg->players_in_room, NONE, debug_str));
+        int players[MAX_PLAYERS];
+        int i;
+        for (i = 0; msg->players_in_room[i] != NONE; ++i) {
+          players[i] = msg->players_in_room[i] + 1;
+        }
+        players[i] = NONE;
+        log_info("Game defined by %d is going to start: room %d, players %s\n", msg->room_owner + 1,
+                 msg->room_id + 1, arr_to_str(players, NONE, debug_str));
+
         int m_index = NONE;
         for (int i = 0; msg->players_in_room[i] != NONE; ++i) {
           if (msg->players_in_room[i] == player_id) {
@@ -73,11 +84,15 @@ void game_loop() {
         }
         assertion(m_index != NONE);
         log_debug("Waiting for players %s", arr_to_str(&msg->players_in_room[m_index + 1], NONE, debug_str));
+        log_info("Entered room %d, game defined by %d, waiting for players %s\n", msg->room_id + 1,
+                 msg->room_owner + 1, arr_to_str(players, NONE, debug_str));
+
         break;
       }
       case ev_server_room_started : {
         log_debug("Game finished in room %d", msg->room_id);
         game_send_player_leaving_room(ipc, player_id);
+        log_info("Left room %d\n", msg->room_id + 1);
         break;
       }
       case ev_server_finished: {

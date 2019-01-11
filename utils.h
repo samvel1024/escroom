@@ -42,6 +42,8 @@ sem_t *bind_sem(char *sem_name);
 
 void log_init(char *);
 
+void log_info(const char *format, ...);
+
 void log_debug(const char *format, ...);
 
 char *arr_to_str(int *arr, int end, char *buff);

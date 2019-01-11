@@ -32,6 +32,16 @@ void log_debug(const char *format, ...) {
   va_end(args);
 }
 
+#else
+void log_debug(const char *format, ...) {}
+#endif
+
+void log_info(const char *format, ...){
+  va_list args;
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+}
 
 char *arr_to_str(int *arr, int end, char *buff){
   int len = 1;
@@ -47,10 +57,6 @@ char *arr_to_str(int *arr, int end, char *buff){
   return buff;
 }
 
-
-#else
-void log_debug(const char *format, ...) {}
-#endif
 
 /******************************* Shared memory ************************************
  **********************************************************************************/
