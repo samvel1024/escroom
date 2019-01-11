@@ -15,39 +15,38 @@
 
 typedef struct room_t {
   //
-  int max_size;
-  int type;
+  short max_size;
+  short type;
   // Mutable
-  int inside_count;
-  int waiting_game_size;
+  short inside_count;
+  short waiting_game_size;
   bool game_started;
-  int defined_by;
-  int players_inside[MAX_PLAYERS];
+  short defined_by;
+  short players_inside[MAX_PLAYERS];
 } Room;
 
 typedef struct player_t {
   //
-  int id;
-  int type;
+  short id;
+  short type;
   // Mutable
-  int assigned_room;
-  bool busy;
+  short assigned_room;
 
 } Player;
 
 typedef struct game_t {
   Room rooms[MAX_ROOMS];
   Player players[MAX_PLAYERS];
-  int player_count;
-  int room_count;
-  int finished_players;
+  short player_count;
+  short room_count;
+  short finished_players;
 } Game;
 
 typedef struct game_def_t {
-  int created_by;
+  short created_by;
   char room_type;
-  int types[MAX_TYPES];
-  int ids[MAX_PLAYERS];
+  short types[MAX_TYPES];
+  short ids[MAX_PLAYERS];
 } GameDef;
 
 void game_def_init(GameDef *def) {
@@ -74,7 +73,7 @@ char *game_def_to_string(GameDef *def, char *buff) {
   return buff;
 }
 
-GameDef *game_def_read_next(GameDef *def, FILE *f, int player_id, char *raw) {
+GameDef *game_def_read_next(GameDef *def, FILE *f, short player_id, char *raw) {
   if (feof(f))
     return NULL;
   char buff[MSG_BUFF_LEN];
@@ -95,7 +94,7 @@ GameDef *game_def_read_next(GameDef *def, FILE *f, int player_id, char *raw) {
     } else if (isalpha(*token)) { // type
       def->types[*token - 'A']++;
     } else { // id
-      int id = atoi(token) - 1;
+      short id = (short) (atoi(token) - 1);
       def->ids[ids++] = id;
     }
     token = strtok(NULL, " ");
@@ -119,7 +118,7 @@ void room_set_empty(Room *r) {
   }
 }
 
-Game *game_init(int players, int rooms) {
+Game *game_init(short players, short rooms) {
   Game *g = malloc(sizeof(Game));
   g->player_count = players;
   g->room_count = rooms;
@@ -142,7 +141,7 @@ void game_destroy(Game *g) {
 }
 
 
-void game_init_room(Game *g, int room, int type, int size) {
+void game_init_room(Game *g, short room, short type, short size) {
   assertion(room < g->room_count);
   assertion(type <= 'Z' && type >= 'A');
   g->rooms[room].type = type;
@@ -150,19 +149,19 @@ void game_init_room(Game *g, int room, int type, int size) {
   log_debug("Initialized room r=%d t=%c s=%d", room, (char) type, size);
 }
 
-void game_init_player(Game *g, int p, int t) {
+void game_init_player(Game *g, short p, short t) {
   assertion(p < g->player_count && 'A' <= t && 'Z' >= t);
   g->players[p].type = t;
   g->players[p].assigned_room = NONE;
 }
 
-bool game_player_finished(Game *g, int p){
+bool game_player_finished(Game *g){
   g->finished_players++;
   return g->finished_players == g->player_count;
 }
 
 
-void game_define_new_game(Game *g, int room, int owner, int *players) {
+void game_define_new_game(Game *g, short room, short owner, short *players) {
   assertion((room < g->room_count) && "Index out of range");
   Room *r = &(g->rooms[room]);
   assertion((!r->game_started) && "The requested room is busy");
@@ -183,7 +182,7 @@ void game_define_new_game(Game *g, int room, int owner, int *players) {
   log_debug("Defined a game in room owned by r=%d own=%d players=%s", room, owner, arr_to_str(players, NONE,msg ));
 }
 
-bool game_add_player_to_waiting_list(Game *g, int room, int player) {
+bool game_add_player_to_waiting_list(Game *g, short room, short player) {
   assertion((room < g->room_count && player < g->player_count) && "Indexes out of range");
   assertion((!g->rooms[room].game_started) && "Game is already started, cannot join the room");
   assertion((g->rooms[room].inside_count + 1 <= g->rooms[room].max_size) && "Room is full, cannot join");
@@ -200,7 +199,7 @@ bool game_add_player_to_waiting_list(Game *g, int room, int player) {
   assertion((player_index != NONE) && "The game hosted in this room is not expecting the player to join");
   assertion((player_index >= r->inside_count) && "The player is already waiting for the game to start");
 
-  int tmp = r->players_inside[r->inside_count];
+  short tmp = r->players_inside[r->inside_count];
   r->players_inside[r->inside_count] = r->players_inside[player_index];
   r->players_inside[player_index] = tmp;
 
@@ -251,14 +250,14 @@ bool game_is_ever_playable(Game *g, GameDef *def, int player_id) {
   return true;
 }
 
-void append_arr(int *arr, int *len, int val) {
+void append_arr(short *arr, int *len, short val) {
   arr[*len] = val;
   arr[*len + 1] = NONE;
   (*len)++;
 }
 
 int game_start_if_possible(Game *g, GameDef *def) {
-  int owner_id = def->created_by;
+  short owner_id = def->created_by;
   // The owner of the definition has to be free
   if (g->players[owner_id].assigned_room != NONE)
     return NONE;
@@ -267,7 +266,7 @@ int game_start_if_possible(Game *g, GameDef *def) {
   bool selected[MAX_PLAYERS];
   for (int i = 0; i < MAX_PLAYERS; ++i)
     selected[i] = false;
-  int player_arr[MAX_PLAYERS];
+  short player_arr[MAX_PLAYERS];
   int len = 0;
   player_arr[0] = NONE;
 
@@ -285,7 +284,7 @@ int game_start_if_possible(Game *g, GameDef *def) {
   // Choose players by their type
   int wanted_types[MAX_TYPES];
   memcpy(wanted_types, def->types, sizeof(wanted_types));
-  for (int i = 0; i < g->player_count; ++i) { //TODO change i initial value to be more fair
+  for (short i = 0; i < g->player_count; ++i) { //TODO change i initial value to be more fair
     Player *p = &g->players[i];
     int p_type = p->type - 'A';
     if (wanted_types[p_type] > 0 && p->assigned_room == NONE && !selected[i]) {
@@ -301,9 +300,9 @@ int game_start_if_possible(Game *g, GameDef *def) {
   }
 
   //Choose the room
-  int r_id = NONE;
-  int r_cap = INT_MAX;
-  for (int i = 0; i < g->room_count; ++i) {
+  short r_id = NONE;
+  short r_cap = SHRT_MAX;
+  for (short i = 0; i < g->room_count; ++i) {
     Room *r = &g->rooms[i];
     if (r->type == def->room_type && r->max_size >= len && r_cap > r->max_size) {
       r_cap = r->max_size;
@@ -353,10 +352,10 @@ typedef enum game_event_type {
 } GameEventType;
 
 typedef struct game_message {
-  int player_id;
-  int player_type;
-  int room_id;
-  int players_in_room[MAX_PLAYERS];
+  short player_id;
+  short player_type;
+  short room_id;
+  short players_in_room[MAX_PLAYERS];
   bool def_valid;
   int room_owner;
   GameEventType type;
@@ -377,7 +376,7 @@ void game_msg_init(GameMsg *msg) {
   game_def_init(&msg->game_def);
 }
 
-void game_msg_init_players(const int *players){
+void game_msg_init_players(const short *players){
   int i;
   for(i=0; players[i] != NONE; ++i)
     buff_msg.players_in_room[i] = players[i];
@@ -387,14 +386,14 @@ void game_msg_init_players(const int *players){
 /******************************* Sending events by server  *************************
  ***********************************************************************************/
 
-void game_send_server_accepting_defs(IpcManager *ipc, int player_id){
+void game_send_server_accepting_defs(IpcManager *ipc, short player_id){
   game_msg_init(&buff_msg);
   buff_msg.type = ev_server_accepting_defs;
   buff_msg.player_id = player_id;
   ipc_sendto_client(ipc, &buff_msg, MSG_SIZE, player_id);
 }
 
-void game_send_server_room_started(IpcManager *ipc, int player_id, int room_id) {
+void game_send_server_room_started(IpcManager *ipc, short player_id, short room_id) {
   game_msg_init(&buff_msg);
   buff_msg.type = ev_server_room_started;
   buff_msg.room_id = room_id;
@@ -403,7 +402,7 @@ void game_send_server_room_started(IpcManager *ipc, int player_id, int room_id) 
 }
 
 
-void game_send_server_received_def(IpcManager *ipc, int player_id, bool ok){
+void game_send_server_received_def(IpcManager *ipc, short player_id, bool ok){
   game_msg_init(&buff_msg);
   buff_msg.type = ev_server_received_def;
   buff_msg.player_id = player_id;
@@ -411,7 +410,7 @@ void game_send_server_received_def(IpcManager *ipc, int player_id, bool ok){
   ipc_sendto_client(ipc, &buff_msg, MSG_SIZE, player_id);
 }
 
-void game_send_server_invite_room(IpcManager *ipc, int room_id, int player_id, Game *g){
+void game_send_server_invite_room(IpcManager *ipc, short room_id, short player_id, Game *g){
   game_msg_init(&buff_msg);
   buff_msg.type = ev_server_invite_room;
   game_msg_init_players(g->rooms[room_id].players_inside);
@@ -421,7 +420,7 @@ void game_send_server_invite_room(IpcManager *ipc, int room_id, int player_id, G
   ipc_sendto_client(ipc, &buff_msg, MSG_SIZE, player_id);
 }
 
-void game_send_server_wait_for_players(IpcManager *ipc, int player_id, int room_id, Game *g) {
+void game_send_server_wait_for_players(IpcManager *ipc, short player_id, short room_id, Game *g) {
   game_msg_init(&buff_msg);
   game_msg_init_players(g->rooms[room_id].players_inside);
   buff_msg.type = ev_server_wait_for_players;
@@ -431,7 +430,7 @@ void game_send_server_wait_for_players(IpcManager *ipc, int player_id, int room_
   ipc_sendto_client(ipc, &buff_msg, MSG_SIZE, player_id);
 }
 
-void game_send_server_finished(IpcManager *ipc, int player_id){
+void game_send_server_finished(IpcManager *ipc, short player_id){
   game_msg_init(&buff_msg);
   buff_msg.type = ev_server_finished;
   ipc_sendto_client(ipc, &buff_msg, MSG_SIZE, player_id);
@@ -441,7 +440,7 @@ void game_send_server_finished(IpcManager *ipc, int player_id){
  ***********************************************************************************/
 
 
-void game_send_player_register(IpcManager *ipc, int player_id, int player_type) {
+void game_send_player_register(IpcManager *ipc, short player_id, short player_type) {
   game_msg_init(&buff_msg);
   buff_msg.player_type = player_type;
   buff_msg.type = ev_player_register;
@@ -450,14 +449,14 @@ void game_send_player_register(IpcManager *ipc, int player_id, int player_type) 
 }
 
 
-void game_send_player_finished(IpcManager *ipc, int player_id) {
+void game_send_player_finished(IpcManager *ipc, short player_id) {
   game_msg_init(&buff_msg);
   buff_msg.type = ev_player_finished;
   buff_msg.player_id = player_id;
   ipc_sendto_server(ipc, &buff_msg, MSG_SIZE);
 }
 
-void game_send_player_definition(IpcManager *ipc, int player_id, GameDef *def) {
+void game_send_player_definition(IpcManager *ipc, short player_id, GameDef *def) {
   game_msg_init(&buff_msg);
   buff_msg.type = ev_player_def;
   buff_msg.player_id = player_id;
@@ -465,7 +464,7 @@ void game_send_player_definition(IpcManager *ipc, int player_id, GameDef *def) {
   ipc_sendto_server(ipc, &buff_msg, MSG_SIZE);
 }
 
-void game_send_player_joining_room(IpcManager *ipc, int player_id, int room_id) {
+void game_send_player_joining_room(IpcManager *ipc, short player_id, short room_id) {
   game_msg_init(&buff_msg);
   buff_msg.type = ev_player_joining_room;
   buff_msg.room_id = room_id;
@@ -473,7 +472,7 @@ void game_send_player_joining_room(IpcManager *ipc, int player_id, int room_id) 
   ipc_sendto_server(ipc, &buff_msg, MSG_SIZE);
 }
 
-void game_send_player_leaving_room(IpcManager *ipc, int player_id){
+void game_send_player_leaving_room(IpcManager *ipc, short player_id){
   game_msg_init(&buff_msg);
   buff_msg.type = ev_player_leaving_room;
   buff_msg.player_id = player_id;
@@ -484,13 +483,13 @@ void game_send_player_leaving_room(IpcManager *ipc, int player_id){
 /******************************* Receiving events  *********************************
  ***********************************************************************************/
 
-GameMsg *game_receive_client_event(IpcManager *ipc, int expected_ev, GameMsg *msg) {
+GameMsg *game_receive_client_event(IpcManager *ipc, short expected_ev, GameMsg *msg) {
   ipc_getfrom_client(ipc, msg, MSG_SIZE);
   assertion((expected_ev & msg->type) != 0 && "Unexpected event type");
   return msg;
 }
 
-GameMsg *game_receive_server_event(IpcManager *ipc, int client, int expected_ev, GameMsg *msg) {
+GameMsg *game_receive_server_event(IpcManager *ipc, short client, short expected_ev, GameMsg *msg) {
   ipc_getfrom_server(ipc, msg, MSG_SIZE, client);
   if ((expected_ev & msg->type) == 0){
     log_debug("Error: expected %d but got %d", expected_ev, msg->type);

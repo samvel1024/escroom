@@ -5,7 +5,7 @@
 GameDef def_buff;
 GameMsg msg_buff;
 IpcManager *ipc;
-int player_id;
+short player_id;
 char str_buf[10000];
 char raw_input[10000];
 
@@ -81,7 +81,7 @@ void game_loop() {
         log_debug("ev_server_wait_for_players: Waiting in room %d , player list %s",
                   msg->room_id,
                   arr_to_str(msg->players_in_room, NONE, str_buf));
-        int players[MAX_PLAYERS];
+        short players[MAX_PLAYERS];
         int players_len;
         for (players_len = 0; msg->players_in_room[players_len] != NONE; ++players_len) {
           players[players_len] = msg->players_in_room[players_len] + 1;
@@ -121,7 +121,7 @@ void game_loop() {
 }
 int main(int argc, char **argv) {
   assert(argc > 0 && "Count has to be greater than 0");
-  player_id = atoi(argv[1]);
+  player_id = (short) atoi(argv[1]);
   char buff[MSG_BUFF_LEN];
   sprintf(buff, "Player-%d", player_id);
 

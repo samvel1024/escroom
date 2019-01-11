@@ -45,7 +45,7 @@ void log_info(const char *format, ...){
   va_end(args);
 }
 
-char *arr_to_str(int *arr, int end, char *buff){
+char *arr_to_str(short *arr, short end, char *buff){
   int len = 1;
   sprintf(buff, "(");
   char num_buff[20];

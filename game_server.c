@@ -137,7 +137,7 @@ void game_loop() {
       }
       case ev_player_finished: {
         log_debug("ev_player_finished: Player %d finished", msg->player_id);
-        bool game_finished = game_player_finished(game, msg->player_id);
+        bool game_finished = game_player_finished(game);
         if (game_finished) {
           for (int i = 0; i < game->player_count; ++i) {
             game_send_server_finished(ipc, i);

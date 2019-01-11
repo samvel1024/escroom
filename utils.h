@@ -50,6 +50,6 @@ void log_info(const char *format, ...);
 
 void log_debug(const char *format, ...);
 
-char *arr_to_str(int *arr, int end, char *buff);
+char *arr_to_str(short *arr, short end, char *buff);
 
 #endif // ESCROOM_UTILS_H
