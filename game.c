@@ -190,8 +190,8 @@ bool game_is_ever_playable(Game *g, GameDef *def, int player_id) {
     busy[def->ids[i]] = true;
   }
 
-  int wanted_types[MAX_TYPES];
-  memcpy(wanted_types, def->types, sizeof(wanted_types));
+  short wanted_types[MAX_TYPES];
+  memcpy(wanted_types, def->types, MAX_TYPES * sizeof(short));
   for (int i = 0; i < g->player_count; ++i) {
     if (!busy[i])
       wanted_types[g->players[i].type - 'A']--;
@@ -235,8 +235,8 @@ int game_start_if_possible(Game *g, GameDef *def) {
   }
 
   // Choose players by their type
-  int wanted_types[MAX_TYPES];
-  memcpy(wanted_types, def->types, sizeof(wanted_types));
+  short wanted_types[MAX_TYPES];
+  memcpy(wanted_types, def->types, MAX_TYPES * sizeof(short));
   for (short i = 0; i < g->player_count; ++i) { //TODO change i initial value to be more fair
     Player *p = &g->players[i];
     int p_type = p->type - 'A';
