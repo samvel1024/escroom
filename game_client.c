@@ -105,7 +105,7 @@ void game_loop() {
         break;
       }
       case ev_server_room_started : {
-        log_debug("ev_server_room_started: Game finished in room %d", msg->room_id);
+        log_debug("ev_server_room_started: Game started and finished in room %d", msg->room_id);
         game_send_player_leaving_room(ipc, player_id);
         log_info("Left room %d\n", msg->room_id + 1);
         break;

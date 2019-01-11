@@ -78,6 +78,7 @@ void notify_if_any_playable() {
   if (r_id == NONE) return;
   Room *r = &game->rooms[r_id];
   for (int i = 0; r->players_inside[i] != NONE; ++i) {
+    log_debug("Inviting player %d to play in %d", r->players_inside[i], r_id);
     game_send_server_invite_room(ipc, r_id, r->players_inside[i], game);
   }
 }
@@ -118,6 +119,7 @@ void game_loop() {
         if (started) {
           Room *r = &game->rooms[msg->room_id];
           for (int i = 0; r->players_inside[i] != NONE; ++i) {
+            log_debug("Notifying player %d about starting game in %d", r->players_inside[i], msg->room_id);
             game_send_server_room_started(ipc, r->players_inside[i], msg->room_id);
           }
         }
