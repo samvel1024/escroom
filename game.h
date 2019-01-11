@@ -53,10 +53,6 @@ char *game_def_to_string(GameDef *def, char *buff);
 
 GameDef *game_def_read_next(GameDef *def, FILE *f, short player_id, char *raw);
 
-void player_set_free(Player *p);
-
-void room_set_empty(Room *r);
-
 Game *game_init(short players, short rooms);
 
 void game_destroy(Game *g);
@@ -71,11 +67,7 @@ void game_define_new_game(Game *g, short room, short owner, short *players);
 
 bool game_add_player_to_waiting_list(Game *g, short room, short player);
 
-int game_find_room(Game *g, int type);
-
 bool game_is_ever_playable(Game *g, GameDef *def, int player_id);
-
-void append_arr(short *arr, int *len, short val);
 
 int game_start_if_possible(Game *g, GameDef *def);
 

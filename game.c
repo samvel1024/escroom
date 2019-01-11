@@ -167,10 +167,10 @@ bool game_add_player_to_waiting_list(Game *g, short room, short player) {
   return r->game_started;
 }
 
-int game_find_room(Game *g, int type) {
+int game_find_room(Game *g, int type, int size) {
   assertion(type >= 'A' && type <= 'Z');
   for (int i = 0; i < g->room_count; ++i) {
-    if (g->rooms[i].type == type)
+    if (g->rooms[i].type == type && g->rooms[i].max_size >= size)
       return i;
   }
   return NONE;
@@ -178,9 +178,8 @@ int game_find_room(Game *g, int type) {
 
 bool game_is_ever_playable(Game *g, GameDef *def, int player_id) {
   assertion(player_id < g->player_count && player_id >= 0);
-  if (game_find_room(g, def->room_type) == NONE)
-    return false;
 
+  int player_count = 0;
   bool busy[MAX_PLAYERS];
   for (int i = 0; i < MAX_PLAYERS; ++i)
     busy[i] = false;
@@ -188,18 +187,25 @@ bool game_is_ever_playable(Game *g, GameDef *def, int player_id) {
     if (def->ids[i] < 0 || def->ids[i] >= g->player_count) // No player with that id
       return false;
     busy[def->ids[i]] = true;
+    player_count++;
   }
 
   short wanted_types[MAX_TYPES];
   memcpy(wanted_types, def->types, MAX_TYPES * sizeof(short));
   for (int i = 0; i < g->player_count; ++i) {
-    if (!busy[i])
+    if (!busy[i]) {
       wanted_types[g->players[i].type - 'A']--;
+      player_count++;
+    }
   }
   for (int i = 0; i < MAX_TYPES; ++i) {
     if (wanted_types[i] > 0)
       return false;
   }
+
+  if (game_find_room(g, def->room_type, player_count) == NONE)
+    return false;
+
   return true;
 }
 

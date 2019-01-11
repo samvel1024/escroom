@@ -99,6 +99,7 @@ void game_loop() {
 
   bool end = false;
   while (!end) {
+    log_debug("Waiting for clients");
     GameMsg *msg = game_receive_client_event(ipc, ev_player_joining_room |
         ev_player_def |
         ev_player_leaving_room |
