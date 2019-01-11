@@ -1,5 +1,4 @@
 #include "utils.h"
-#include <semaphore.h>
 #include <stdarg.h>
 
 /******************************* Logging ******************************************
@@ -38,27 +37,26 @@ void log_debug(const char *format, ...) {
 void log_debug(const char *format, ...) {}
 #endif
 
-void log_info(const char *format, ...){
+void log_info(const char *format, ...) {
   va_list args;
   va_start(args, format);
   vfprintf(outfile, format, args);
   va_end(args);
 }
 
-char *arr_to_str(short *arr, short end, char *buff){
+char *arr_to_str(short *arr, short end, char *buff) {
   int len = 1;
   sprintf(buff, "(");
   char num_buff[20];
-  for(int i=0; arr[i] != end; ++i){
-    sprintf(num_buff, i == 0 ? "%d": ", %d", arr[i]);
+  for (int i = 0; arr[i] != end; ++i) {
+    sprintf(num_buff, i == 0 ? "%d" : ", %d", arr[i]);
     size_t num_len = strlen(num_buff);
     sprintf(buff + len, "%s", num_buff);
     len += num_len;
   }
-  sprintf(buff + len , "%c", ')');
+  sprintf(buff + len, "%c", ')');
   return buff;
 }
-
 
 /******************************* Shared memory ************************************
  **********************************************************************************/

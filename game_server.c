@@ -1,7 +1,6 @@
 #include "game.h"
 #include "messaging.h"
 
-
 void open_debug_input() {
 #ifdef DEBUG
   freopen("../input/manager.in", "r", stdin);
