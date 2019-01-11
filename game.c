@@ -229,7 +229,7 @@ int game_start_if_possible(Game *g, GameDef *def) {
       log_debug("Cannot play def by player %d, cannot find players by ids", owner_id);
       return NONE;
     } else {
-      selected[i] = true;
+      selected[def->ids[i]] = true;
       append_arr(player_arr, &len, def->ids[i]);
     }
   }
@@ -265,7 +265,7 @@ int game_start_if_possible(Game *g, GameDef *def) {
 
   if (r_id == NONE) {
     log_debug("Cannot play def by player %d, lack of rooms", owner_id);
-    return false;
+    return NONE;
   }
 
   game_define_new_game(g, r_id, owner_id, player_arr);

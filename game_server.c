@@ -1,3 +1,4 @@
+#include <signal.h>
 #include "game.h"
 #include "messaging.h"
 
@@ -18,6 +19,7 @@ GameMsg msg_buff;
 Node head;
 Node *tail = &head;
 char debug_buff[10000];
+int child_pids[1025];
 
 void add_to_queue(GameDef *def) {
   Node *n = malloc(sizeof(Node));
@@ -58,7 +60,8 @@ void init_rooms() {
 
 void spawn_players() {
   for (int i = 0; i < game->player_count; ++i) {
-    switch (fork()) {
+    int pid;
+    switch (pid = fork()) {
       case -1: {
         assertion(false && "Could not fork");
       }
@@ -68,7 +71,7 @@ void spawn_players() {
         execlp("./player", "player", str, NULL);
         assertion(false && "Could not start player");
       }
-      default:break;
+      default:child_pids[i] = pid;
     }
   }
 }
@@ -151,6 +154,15 @@ void game_loop() {
   }
 
 }
+
+void kill_children() {
+  log_debug("Killing children");
+  for(int i=0; i<game->player_count; ++i){
+    kill(child_pids[i], SIGKILL);
+  }
+  exit(0);
+}
+
 int main() {
   open_debug_input();
   log_init("Manager", stdout);
@@ -160,6 +172,7 @@ int main() {
   ipc = ipc_create(true, "e2", -1);
   init_rooms();
   spawn_players();
+  signal(SIGINT, (void (*)(int)) kill_children);
   game_loop();
 
   wait(NULL);
