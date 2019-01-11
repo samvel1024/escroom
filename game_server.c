@@ -37,11 +37,11 @@ int start_playable() {
     int room;
     if ((room = game_start_if_possible(game, &curr->def)) != NONE) {
       log_debug("Started game defined as: %s", game_def_to_string(&(curr->def), debug_buff));
-      free(curr);
       prev->next = curr->next;
       if (prev->next == NULL) {
         tail = prev;
       }
+      free(curr);
       return room;
     }
     prev = prev->next;
@@ -156,9 +156,15 @@ void game_loop() {
 
 }
 
+void print_player_stats() {
+  for (int i = 0; i < game->player_count; ++i) {
+    log_info("Player %d left after %d game(s)\n", i+1, game->players[i].games_played);
+  }
+}
+
 void kill_children() {
   log_debug("Killing children");
-  for(int i=0; i<game->player_count; ++i){
+  for (int i = 0; i < game->player_count; ++i) {
     kill(child_pids[i], SIGKILL);
   }
   exit(0);
@@ -179,6 +185,7 @@ int main() {
   wait(NULL);
   ipc_close(ipc);
   log_debug("Finishing gracefully");
+  print_player_stats();
   game_destroy(game);
 }
 

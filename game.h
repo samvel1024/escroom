@@ -12,23 +12,22 @@
 #define NONE -1
 
 typedef struct room_t {
-  //
   short max_size;
   short type;
   // Mutable
   short inside_count;
   short waiting_game_size;
   bool game_started;
+  bool game_planned;
   short defined_by;
   short players_inside[MAX_PLAYERS];
 } Room;
 
 typedef struct player_t {
-  //
-  short id;
   short type;
   // Mutable
   short assigned_room;
+  short games_played;
 
 } Player;
 
@@ -38,6 +37,7 @@ typedef struct game_t {
   short player_count;
   short room_count;
   short finished_players;
+  int player_search;
 } Game;
 
 typedef struct game_def_t {
