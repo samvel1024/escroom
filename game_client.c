@@ -1,5 +1,6 @@
 #include "messaging.h"
 #include "game.h"
+
 #include <stdarg.h>
 
 GameDef def_buff;
@@ -127,7 +128,7 @@ int main(int argc, char **argv) {
 
   open_input(player_id + 1);
   log_init(buff, open_output(player_id + 1));
-  ipc = ipc_create(false, "e1", player_id);
+  ipc = ipc_create(false, "e2", player_id);
   game_loop();
   ipc_close(ipc);
   log_debug("Finishing gracefully");

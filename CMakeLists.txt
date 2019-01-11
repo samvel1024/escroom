@@ -18,8 +18,9 @@ add_definitions(-DDEBUG -DENABLE_ASSERT)
 
 
 add_library(utils utils.c)
-add_library(messaging messaging.c)
+add_library(ipc ipc.c)
 add_library(game game.c)
+add_library(messaging messaging.c)
 add_executable(manager game_server.c)
 add_executable(player game_client.c)
 add_executable(simpletest test.c)

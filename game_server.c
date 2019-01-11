@@ -1,5 +1,6 @@
-#include "messaging.h"
 #include "game.h"
+#include "messaging.h"
+
 
 void open_debug_input() {
 #ifdef DEBUG
@@ -157,7 +158,7 @@ int main() {
   int players, rooms;
   scanf("%d %d\n", &players, &rooms);
   game = game_init(players, rooms);
-  ipc = ipc_create(true, "e1", -1);
+  ipc = ipc_create(true, "e2", -1);
   init_rooms();
   spawn_players();
   game_loop();
