@@ -14,7 +14,7 @@ macro(add_executable _name)
     endif ()
 endmacro()
 
-add_definitions(-DDEBUG)
+add_definitions(-DDEBUG -DENABLE_ASSERT)
 
 
 add_library(utils utils.c)

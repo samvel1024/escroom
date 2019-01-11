@@ -9,11 +9,11 @@
 #include <semaphore.h>
 #include "utils.h"
 
-#define MSG_BUFF_LEN 6000
+#define MSG_BUFF_LEN 9000
 #define MAX_CLIENTS 105
 #define TOKEN_BUFF_SIZE 40
 
-/******************************* Synchronization objects ***************************
+/******************************* Synchronization  **********************************
  ***********************************************************************************/
 
 /**
@@ -109,7 +109,7 @@ void synch_destroy(MsgSynch *synch) {
   free(synch);
 }
 
-/******************************* Messaging ******************************************
+/******************************* Messaging ****************************************
  **********************************************************************************/
 /**
  * Buffers for communication between processes

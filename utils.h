@@ -21,7 +21,7 @@
 #include <semaphore.h>
 
 void print_stacktrace();
-
+#ifdef ENABLE_ASSERT
 #define assertion(__expr) {\
 int __expr_val = (__expr); \
 if (__expr_val == 0) {\
@@ -31,6 +31,10 @@ if (__expr_val == 0) {\
     exit(1); \
 }\
 }
+#else
+#define assertion(expr)
+#endif
+
 
 void *shared_mem_get(char *name, unsigned long size, bool init);
 
@@ -40,8 +44,12 @@ sem_t *force_create_sem(char *sem_name, int val);
 
 sem_t *bind_sem(char *sem_name);
 
-void log_init(char *);
+void log_init(char *name, FILE *f);
+
+void log_info(const char *format, ...);
 
 void log_debug(const char *format, ...);
+
+char *arr_to_str(int *arr, int end, char *buff);
 
 #endif // ESCROOM_UTILS_H

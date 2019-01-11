@@ -6,6 +6,7 @@
  **********************************************************************************/
 #define LOG_NAME_SIZE 50
 
+FILE *outfile;
 char log_prefix[LOG_NAME_SIZE + 1];
 
 void print_stacktrace() {
@@ -14,7 +15,8 @@ void print_stacktrace() {
   backtrace_symbols_fd(buffer + 1, levels - 1, 2);
 }
 
-void log_init(char *name) {
+void log_init(char *name, FILE *f) {
+  outfile = f;
   assertion(strlen(name) < LOG_NAME_SIZE)
   strcpy(log_prefix, name);
 }
@@ -35,6 +37,28 @@ void log_debug(const char *format, ...) {
 #else
 void log_debug(const char *format, ...) {}
 #endif
+
+void log_info(const char *format, ...){
+  va_list args;
+  va_start(args, format);
+  vfprintf(outfile, format, args);
+  va_end(args);
+}
+
+char *arr_to_str(int *arr, int end, char *buff){
+  int len = 1;
+  sprintf(buff, "(");
+  char num_buff[20];
+  for(int i=0; arr[i] != end; ++i){
+    sprintf(num_buff, i == 0 ? "%d": ", %d", arr[i]);
+    size_t num_len = strlen(num_buff);
+    sprintf(buff + len, "%s", num_buff);
+    len += num_len;
+  }
+  sprintf(buff + len , "%c", ')');
+  return buff;
+}
+
 
 /******************************* Shared memory ************************************
  **********************************************************************************/

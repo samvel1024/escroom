@@ -1,14 +1,9 @@
-#include "game.h"
-
-int main() {
-  freopen("../test.in", "r", stdin);
-  char c;
-  scanf("%c\n", &c);
-  GameDef d;
-  GameDef *def = game_def_read_next(&d, stdin);
-  char b[1000];
-  while(def != NULL){
-    printf("%s\n", game_def_to_string(def, b));
-    def = game_def_read_next(&d, stdin);
-  }
+#include "utils.h"
+int main(){
+  int s = 1302568;
+  char *ptr = shared_mem_get("test_shm", s, true);
+  char *cl = shared_mem_get("test_shm", s, false);
+  cl[0] = 'a';
+  assertion(ptr[0] == 'a');
+  shared_mem_close("test_shm", ptr, s);
 }
