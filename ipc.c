@@ -9,7 +9,7 @@
 #include "utils.h"
 
 #define MSG_BUFF_LEN 4200
-#define MAX_CLIENTS 105
+#define MAX_CLIENTS 1025
 #define TOKEN_BUFF_SIZE 40
 
 /******************************* Synchronization  **********************************
