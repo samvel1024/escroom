@@ -64,7 +64,7 @@ MsgSynch *synch_create_server(char *prefix) {
 }
 
 MsgSynch *synch_create_client(char *prefix, int client_id) {
-  assertion(client_id >= 0 && client_id < MAX_CLIENTS);
+  dassert(client_id >= 0 && client_id < MAX_CLIENTS);
   MsgSynch *s = malloc(sizeof(MsgSynch));
   char name[TOKEN_BUFF_SIZE];
   s->server_mutex = bind_sem(append_prefix(name, prefix, "server_mutex"));
@@ -133,15 +133,6 @@ void msgb_close(MsgBuffer *buffer) {
 
 /******************************* IPC  *********************************************
  **********************************************************************************/
-/**
- * Brings all above structs together to provide a uniform API for creation and destruction
- */
-struct ipc_manager_t {
-  MsgBuffer *buff;
-  MsgSynch *synch;
-  bool is_server;
-};
-
 typedef struct q_node_t {
   struct q_node_t *next;
   char bytes[MSG_BUFF_LEN];
@@ -149,15 +140,23 @@ typedef struct q_node_t {
   int client_id;
 } QNode;
 
-QNode *q_head = NULL;
-QNode *q_tail = NULL;
-pthread_t out_thread;
-pthread_mutex_t lock;
-pthread_cond_t queue_not_empty;
-bool finished = false;
+/**
+ * Brings all above structs together to provide a uniform API for creation and destruction
+ */
+struct ipc_manager_t {
+  MsgBuffer *buff;
+  MsgSynch *synch;
+  bool is_server;
+  QNode *q_head;
+  QNode *q_tail;
+  pthread_t out_thread;
+  pthread_mutex_t lock;
+  pthread_cond_t queue_not_empty;
+  bool finished;
+};
 
-void async_enqueue(char *bytes, int size, int client) {
-  pthread_mutex_lock(&lock);
+void async_enqueue(IpcManager *ipc, char *bytes, int size, int client) {
+  pthread_mutex_lock(&(ipc->lock));
 
   QNode *new = malloc(sizeof(QNode));
   new->next = NULL;
@@ -165,61 +164,61 @@ void async_enqueue(char *bytes, int size, int client) {
   new->client_id = client;
   memcpy(new->bytes, bytes, size);
 
-  if (q_head == NULL) {
-    assertion(q_tail == NULL);
-    q_head = new;
-    q_tail = new;
+  if (ipc->q_head == NULL) {
+    dassert(ipc->q_tail == NULL);
+    ipc->q_head = new;
+    ipc->q_tail = new;
   } else {
-    assertion(q_tail != NULL && q_head != NULL);
-    q_tail->next = new;
-    q_tail = q_tail->next;
+    dassert(ipc->q_tail != NULL && ipc->q_head != NULL);
+    ipc->q_tail->next = new;
+    ipc->q_tail = ipc->q_tail->next;
   }
-  pthread_cond_signal(&queue_not_empty);
-  pthread_mutex_unlock(&lock);
+  pthread_cond_signal(&(ipc->queue_not_empty));
+  pthread_mutex_unlock(&(ipc->lock));
 }
 
-QNode *dequeue() {
-  if (q_head == NULL) {
-    assertion(q_tail == NULL);
+QNode *dequeue(IpcManager *ipc) {
+  if (ipc->q_head == NULL) {
+    dassert(ipc->q_tail == NULL);
     return NULL;
   }
-  QNode *ans = q_head;
-  if (q_head == q_tail) {
-    q_tail = NULL;
-    q_head = NULL;
-  }else {
-    q_head = q_head->next;
+  QNode *ans = ipc->q_head;
+  if (ipc->q_head == ipc->q_tail) {
+    ipc->q_tail = NULL;
+    ipc->q_head = NULL;
+  } else {
+    ipc->q_head = ipc->q_head->next;
   }
   return ans;
 }
 
 void *out_thread_loop(void *ptr) {
-  IpcManager *m = ptr;
-  while (!finished || q_head != NULL) {
-    pthread_mutex_lock(&lock);
-    while (q_head == NULL && !finished) {
-      pthread_cond_wait(&queue_not_empty, &lock);
+  IpcManager *ipc = ptr;
+  while (!ipc->finished || ipc->q_head != NULL) {
+    pthread_mutex_lock(&(ipc->lock));
+    while (ipc->q_head == NULL && !ipc->finished) {
+      pthread_cond_wait(&(ipc->queue_not_empty), &(ipc->lock));
     }
-    QNode *node = dequeue();
+    QNode *node = dequeue(ipc);
     if (node != NULL) {
-      sem_wait(m->synch->clients_empty[node->client_id]);
-      memcpy(m->buff->clients[node->client_id], node->bytes, node->bytes_len);
-      sem_post(m->synch->clients_full[node->client_id]);
+      sem_wait(ipc->synch->clients_empty[node->client_id]);
+      memcpy(ipc->buff->clients[node->client_id], node->bytes, node->bytes_len);
+      sem_post(ipc->synch->clients_full[node->client_id]);
       free(node);
     }
-    pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&(ipc->lock));
   }
 
   return NULL;
 }
 
-void join_out_thread() {
-  pthread_mutex_lock(&lock);
-  finished = true;
-  pthread_cond_signal(&queue_not_empty);
-  pthread_mutex_unlock(&lock);
+void join_out_thread(IpcManager *ipc) {
+  pthread_mutex_lock(&(ipc->lock));
+  ipc->finished = true;
+  pthread_cond_signal(&(ipc->queue_not_empty));
+  pthread_mutex_unlock(&(ipc->lock));
   void *arg;
-  pthread_join(out_thread, &arg);
+  pthread_join(ipc->out_thread, &arg);
 }
 
 IpcManager *ipc_create(bool server, char *prefix, int client_id) {
@@ -228,12 +227,15 @@ IpcManager *ipc_create(bool server, char *prefix, int client_id) {
   mngr->is_server = server;
   mngr->buff = msgb_init(prefix, server);
   mngr->synch = server ? synch_create_server(prefix) : synch_create_client(prefix, client_id);
-  pthread_create(&out_thread, NULL, out_thread_loop, mngr);
+  mngr->q_head = NULL;
+  mngr->q_tail = NULL;
+  mngr->finished = false;
+  pthread_create(&mngr->out_thread, NULL, out_thread_loop, mngr);
   return mngr;
 }
 
 void ipc_close(IpcManager *mngr) {
-  join_out_thread();
+  join_out_thread(mngr);
   if (mngr->is_server) {
     msgb_close(mngr->buff);
   }
@@ -242,28 +244,28 @@ void ipc_close(IpcManager *mngr) {
 }
 
 void ipc_getfrom_server(IpcManager *m, void *buff, int size, int client_id) {
-  assertion(!m->is_server && "Only client can call this procedure");
+  dassert(!m->is_server && "Only client can call this procedure");
   sem_wait(m->synch->my_client_full);
   memcpy(buff, m->buff->clients[client_id], size);
   sem_post(m->synch->my_client_empty);
 }
 
 void ipc_sendto_client(IpcManager *m, void *msg, int size, int client_id) {
-  assertion(m->is_server && "Only server can call this procedure");
-  assertion(size < MSG_BUFF_LEN && "Message is too long");
-  async_enqueue(msg, size, client_id);
+  dassert(m->is_server && "Only server can call this procedure");
+  dassert(size < MSG_BUFF_LEN && "Message is too long");
+  async_enqueue(m, msg, size, client_id);
 }
 
 void ipc_getfrom_client(IpcManager *m, void *buff, int size) {
-  assertion(m->is_server && "Only server can call this procedure");
+  dassert(m->is_server && "Only server can call this procedure");
   sem_wait(m->synch->server_full);
   memcpy(buff, m->buff->server, size);
   sem_post(m->synch->server_empty);
 }
 
 void ipc_sendto_server(IpcManager *m, void *msg, int size) {
-  assertion(!m->is_server && "Only client can call this procedure");
-  assertion(size < MSG_BUFF_LEN && "Message is too long");
+  dassert(!m->is_server && "Only client can call this procedure");
+  dassert(size < MSG_BUFF_LEN && "Message is too long");
   sem_wait(m->synch->server_mutex);
   sem_wait(m->synch->server_empty);
   memcpy(m->buff->server, msg, size);

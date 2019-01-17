@@ -33,7 +33,7 @@ GameDef *game_def_read_next(GameDef *def, FILE *f, short player_id, char *raw) {
     return NULL;
   char buff[MAX_MSG_LEN];
   char *line = fgets(buff, MAX_MSG_LEN, f);
-  assertion(ferror(f) == 0 && "There was error reading the file")
+  dassert(ferror(f) == 0 && "There was error reading the file")
   if (line == NULL)
     return NULL;
   strcpy(raw, line);
@@ -44,7 +44,7 @@ GameDef *game_def_read_next(GameDef *def, FILE *f, short player_id, char *raw) {
   def->ids[ids++] = player_id;
   while (token != NULL) {
     if (token == line) { // room type (has to be the first)
-      assertion(strlen(token) == 1 && "Type of the room cannot be longer than 1 char");
+      dassert(strlen(token) == 1 && "Type of the room cannot be longer than 1 char");
       def->room_type = *token;
     } else if (isalpha(*token)) { // type
       def->types[*token - 'A']++;
@@ -97,15 +97,15 @@ void game_destroy(Game *g) {
 }
 
 void game_init_room(Game *g, short room, short type, short size) {
-  assertion(room < g->room_count);
-  assertion(type <= 'Z' && type >= 'A');
+  dassert(room < g->room_count);
+  dassert(type <= 'Z' && type >= 'A');
   g->rooms[room].type = type;
   g->rooms[room].max_size = size;
   log_debug("Initialized room r=%d t=%c s=%d", room, (char) type, size);
 }
 
 void game_init_player(Game *g, short p, short t) {
-  assertion(p < g->player_count && 'A' <= t && 'Z' >= t);
+  dassert(p < g->player_count && 'A' <= t && 'Z' >= t);
   g->players[p].type = t;
   g->players[p].assigned_room = NONE;
   g->players[p].games_played = 0;
@@ -116,19 +116,22 @@ bool game_player_finished(Game *g) {
 }
 
 void game_define_new_game(Game *g, short room, short owner, short *players) {
-  assertion((room < g->room_count) && "Index out of range");
+  dassert((room < g->room_count) && "Index out of range");
   Room *r = &(g->rooms[room]);
-  assertion((!r->game_started) && "The requested room is busy");
-  assertion((owner < g->player_count) && "Owner out of bounds");
+  dassert((!r->game_started) && "The requested room is busy");
+  dassert((owner < g->player_count) && "Owner out of bounds");
   r->inside_count = 0;
   r->waiting_game_size = 0;
   r->game_started = false;
   r->defined_by = owner;
   r->game_planned = true;
   for (int i = 0; players[i] != NONE; ++i) {
-    assertion((players[i] < g->player_count) && "Player out of range")
+    dassert((players[i] < g->player_count) && "Player out of range")
     Player *p = &(g->players[players[i]]);
-    assertion((p->assigned_room == NONE) && "Player is not free");
+    if (p->assigned_room != NONE) {
+      dassert(false);
+    }
+    dassert((p->assigned_room == NONE) && "Player is not free");
     r->players_inside[i] = players[i];
     r->waiting_game_size++;
     g->players[players[i]].assigned_room = room;
@@ -138,11 +141,11 @@ void game_define_new_game(Game *g, short room, short owner, short *players) {
 }
 
 bool game_add_player_to_waiting_list(Game *g, short room, short player) {
-  assertion((room < g->room_count && player < g->player_count) && "Indexes out of range");
-  assertion((!g->rooms[room].game_started) && "Game is already started, cannot join the room");
-  assertion((g->rooms[room].inside_count + 1 <= g->rooms[room].max_size) && "Room is full, cannot join");
-  assertion((g->players[player].assigned_room == room) && "The requested player is not assigned to this room");
-  assertion((g->rooms[room].game_planned) && "Game is not planned in this room");
+  dassert((room < g->room_count && player < g->player_count) && "Indexes out of range");
+  dassert((!g->rooms[room].game_started) && "Game is already started, cannot join the room");
+  dassert((g->rooms[room].inside_count + 1 <= g->rooms[room].max_size) && "Room is full, cannot join");
+  dassert((g->players[player].assigned_room == room) && "The requested player is not assigned to this room");
+  dassert((g->rooms[room].game_planned) && "Game is not planned in this room");
 
   Room *r = &(g->rooms[room]);
   int player_index = NONE;
@@ -155,8 +158,8 @@ bool game_add_player_to_waiting_list(Game *g, short room, short player) {
     printf("A");
   }
 
-  assertion((player_index != NONE) && "The game hosted in this room is not expecting the player to join");
-  assertion((player_index >= r->inside_count) && "The player is already waiting for the game to start");
+  dassert((player_index != NONE) && "The game hosted in this room is not expecting the player to join");
+  dassert((player_index >= r->inside_count) && "The player is already waiting for the game to start");
 
   short tmp = r->players_inside[r->inside_count];
   r->players_inside[r->inside_count] = r->players_inside[player_index];
@@ -174,7 +177,7 @@ bool game_add_player_to_waiting_list(Game *g, short room, short player) {
 }
 
 int game_find_room(Game *g, int type, int size) {
-  assertion(type >= 'A' && type <= 'Z');
+  dassert(type >= 'A' && type <= 'Z');
   for (int i = 0; i < g->room_count; ++i) {
     if (g->rooms[i].type == type && g->rooms[i].max_size >= size)
       return i;
@@ -183,15 +186,17 @@ int game_find_room(Game *g, int type, int size) {
 }
 
 bool game_is_ever_playable(Game *g, GameDef *def, int player_id) {
-  assertion(player_id < g->player_count && player_id >= 0);
+  dassert(player_id < g->player_count && player_id >= 0);
 
   int player_count = 0;
   bool busy[MAX_PLAYERS];
   for (int i = 0; i < MAX_PLAYERS; ++i)
     busy[i] = false;
   for (int i = 0; i < MAX_PLAYERS && def->ids[i] != NONE; ++i) {
-    if (def->ids[i] < 0 || def->ids[i] >= g->player_count) // No player with that id
+    if (def->ids[i] < 0 || def->ids[i] >= g->player_count) { // No player with that id
+      log_debug("Rejecting game by %d, no player with id %d", player_id, def->ids[i]);
       return false;
+    }
     busy[def->ids[i]] = true;
     player_count++;
   }
@@ -200,17 +205,25 @@ bool game_is_ever_playable(Game *g, GameDef *def, int player_id) {
   memcpy(wanted_types, def->types, MAX_TYPES * sizeof(short));
   for (int i = 0; i < g->player_count; ++i) {
     if (!busy[i]) {
-      wanted_types[g->players[i].type - 'A']--;
-      player_count++;
+      int typ = g->players[i].type - 'A';
+      if (wanted_types[typ] > 0){
+        wanted_types[typ]--;
+        player_count++;
+      }
     }
   }
   for (int i = 0; i < MAX_TYPES; ++i) {
-    if (wanted_types[i] > 0)
+    if (wanted_types[i] > 0) {
+      log_debug("Rejecting game by %d, no enough players with type %c", player_id, i + 'A');
       return false;
+    }
   }
 
-  if (game_find_room(g, def->room_type, player_count) == NONE)
+  if (game_find_room(g, def->room_type, player_count) == NONE) {
+    log_debug("Rejecting game by %d, no suitable room ", player_id);
+
     return false;
+  }
 
   return true;
 }
@@ -237,12 +250,13 @@ int game_start_if_possible(Game *g, GameDef *def) {
 
   // Make sure all the directly specified players are free
   for (int i = 0; def->ids[i] != NONE; ++i) {
-    if (g->players[def->ids[i]].assigned_room != NONE && !selected[def->ids[i]]) {
+    short plid = def->ids[i];
+    if (g->players[plid].assigned_room != NONE && !selected[plid]) {
       log_debug("Cannot play def by player %d, cannot find players by ids", owner_id);
       return NONE;
     } else {
-      selected[def->ids[i]] = true;
-      append_arr(player_arr, &len, def->ids[i]);
+      selected[plid] = true;
+      append_arr(player_arr, &len, plid);
     }
   }
 
@@ -250,14 +264,14 @@ int game_start_if_possible(Game *g, GameDef *def) {
   short wanted_types[MAX_TYPES];
   memcpy(wanted_types, def->types, MAX_TYPES * sizeof(short));
 
-  for (int i = (g->player_search + 1) % g->player_count;;i = (i + 1) % g->player_count) {
+  for (int i = (g->player_search + 1) % g->player_count;; i = (i + 1) % g->player_count) {
     Player *p = &g->players[i];
     int p_type = p->type - 'A';
     if (wanted_types[p_type] > 0 && p->assigned_room == NONE && !selected[i]) {
       wanted_types[p_type]--;
       append_arr(player_arr, &len, i);
     }
-    if (i == g->player_search){
+    if (i == g->player_search) {
       break;
     }
   }
@@ -290,9 +304,9 @@ int game_start_if_possible(Game *g, GameDef *def) {
 }
 
 bool game_player_leave_room(Game *g, int player) {
-  assertion((player < g->player_count) && "Player out of bounds");
+  dassert((player < g->player_count) && "Player out of bounds");
   Player *p = &(g->players[player]);
-  assertion((p->assigned_room != NONE) && "Player is free, cannot leave a room");
+  dassert((p->assigned_room != NONE) && "Player is free, cannot leave a room");
   Room *r = &(g->rooms[p->assigned_room]);
   r->inside_count--;
   log_debug("Player leaved room %d %d", player, p->assigned_room);

@@ -21,7 +21,7 @@
 #include <semaphore.h>
 
 void print_stacktrace();
-#ifdef ENABLE_ASSERT
+
 #define assertion(__expr) {\
 int __expr_val = (__expr); \
 if (__expr_val == 0) {\
@@ -31,8 +31,11 @@ if (__expr_val == 0) {\
     exit(1); \
 }\
 }
+
+#ifdef ENABLE_ASSERT
+#define dassert(__expr) assertion(__expr) // debugging assertion
 #else
-#define assertion(expr)
+#define dassert(expr)
 #endif
 
 void *shared_mem_get(char *name, unsigned long size, bool init);

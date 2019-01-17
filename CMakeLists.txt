@@ -15,8 +15,8 @@ macro(add_executable _name)
     endif ()
 endmacro()
 
-add_definitions(-DDEBUG)
-add_definitions(-DENABLE_ASSERT)
+#add_definitions(-DDEBUG)
+#add_definitions(-DENABLE_ASSERT)
 
 add_executable(manager game_server.c messaging.c messaging.h ipc.c ipc.h utils.c utils.h game.h game.c)
 add_executable(player game_client.c messaging.c messaging.h ipc.c ipc.h utils.c utils.h game.h game.c)

@@ -1,8 +1,8 @@
 
 #include "messaging.h"
 
+#define MSG_SIZE sizeof(GameMsg)
 GameMsg buff_msg;
-const int MSG_SIZE = sizeof(GameMsg);
 
 void game_msg_init(GameMsg *msg) {
   msg->player_id = NONE;
@@ -121,7 +121,7 @@ void game_send_player_leaving_room(IpcManager *ipc, short player_id) {
 
 GameMsg *game_receive_client_event(IpcManager *ipc, short expected_ev, GameMsg *msg) {
   ipc_getfrom_client(ipc, msg, MSG_SIZE);
-  assertion((expected_ev & msg->type) != 0 && "Unexpected event type");
+  dassert((expected_ev & msg->type) != 0 && "Unexpected event type");
   return msg;
 }
 
@@ -130,7 +130,7 @@ GameMsg *game_receive_server_event(IpcManager *ipc, short client, short expected
   if ((expected_ev & msg->type) == 0) {
     log_debug("Error: expected %d but got %d", expected_ev, msg->type);
   }
-  assertion((expected_ev & msg->type) != 0 && "Unexpected event type");
+  dassert((expected_ev & msg->type) != 0 && "Unexpected event type");
   return msg;
 }
 

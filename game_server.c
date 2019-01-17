@@ -63,13 +63,13 @@ void spawn_players() {
     int pid;
     switch (pid = fork()) {
       case -1: {
-        assertion(false && "Could not fork");
+        dassert(false && "Could not fork");
       }
       case 0: {
         char str[50];
         sprintf(str, "%d", i);
         execlp("./player", "player", str, NULL);
-        assertion(false && "Could not start player");
+        dassert(false && "Could not start player");
       }
       default:child_pids[i] = pid;
     }
@@ -150,7 +150,7 @@ void game_loop() {
         }
         break;
       }
-      default: assertion(false && "Illegal value of event");
+      default: dassert(false && "Illegal value of event");
     }
   }
 

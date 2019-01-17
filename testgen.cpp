@@ -28,14 +28,13 @@ int min(int a, int b) {
 
 using namespace std::chrono;
 int main() {
-  milliseconds ms = duration_cast<milliseconds>(
-      system_clock::now().time_since_epoch()
-  );
-  srand(static_cast<unsigned int>(ms.count()));
 
   string dir;
   int games;
-  cin >> players_size >> rooms_size >> games >> dir;
+  int seed;
+  cin >> players_size >> rooms_size >> games >>seed >> dir;
+  srand(seed);
+
   freopen((dir + "/manager.in").c_str(), "w", stdout);
   cout << players_size << " " << rooms_size << endl;
 
@@ -48,26 +47,37 @@ int main() {
     players.emplace_back(rand_char());
   }
 
-  for (int i = 0; i < players_size; ++i) {
-    freopen((dir + "/player-" + to_string(i + 1) + ".in").c_str(), "w", stdout);
-    cout << players[i] << endl;
+  for (int curr_player = 0; curr_player < players_size; ++curr_player) {
+    freopen((dir + "/player-" + to_string(curr_player + 1) + ".in").c_str(), "w", stdout);
+    cout << players[curr_player] << endl;
+    //Generate games for player i
     for (int g = 0; g < games; ++g) {
-      pair<char, int> r = rooms[rand() % rooms.size()];
-      cout << r.first << " ";
-      int room_cap = r.second;
-      vector<int> p_index;
-      for (int j = 0; j < players_size; ++j) p_index.emplace_back(j);
-      random_shuffle(p_index.begin(), p_index.end());
-      for (int j = 0; j < min(players.size() - 1, room_cap); ++j) {
-        if (p_index[j] == i) continue;
-        bool by_type = static_cast<bool>(rand() % 2);
-        if (by_type) {
-          cout << players[p_index[j]] << " ";
+      int room_id = rand() % rooms_size;
+      char room_type = rooms[room_id].first;
+      int room_size = rooms[room_id].second - 1; // The player i has to play anyway
+      int game_size = min(room_size,  rand() % (players_size - 1));
+
+      cout << room_type << " ";
+      vector <int> participants;
+      for(int pl=0; pl<players_size; ++pl){
+        if (pl == curr_player) continue;
+        participants.push_back(pl);
+      }
+      random_shuffle(participants.begin(), participants.end());
+      // For each player in game
+      for (int p = 0; p < game_size; ++p) {
+        bool by_id = static_cast<bool>(rand() % 2);
+        //The player i should not select himself
+        int participant_id = participants[p];
+        if (by_id) {
+          cout << participant_id + 1 << " ";
         } else {
-          cout << p_index[j] + 1 << " ";
+          cout << players[participant_id] << " ";
         }
+
       }
       cout << endl;
+
     }
   }
 

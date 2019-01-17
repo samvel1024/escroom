@@ -85,7 +85,7 @@ void game_loop() {
         short players[MAX_PLAYERS];
         int players_len;
         for (players_len = 0; msg->players_in_room[players_len] != NONE; ++players_len) {
-          players[players_len] = msg->players_in_room[players_len] + 1;
+          players[players_len] = (short) (msg->players_in_room[players_len] + 1);
         }
         players[players_len] = NONE;
         log_info("Game defined by %d is going to start: room %d, players %s\n", msg->room_owner + 1,
@@ -98,7 +98,7 @@ void game_loop() {
             break;
           }
         }
-        assertion(m_index != NONE);
+        dassert(m_index != NONE);
         log_debug("Waiting for players %s", arr_to_str(&msg->players_in_room[m_index + 1], NONE, str_buf));
         log_info("Entered room %d, game defined by %d, waiting for players %s\n", msg->room_id + 1,
                  msg->room_owner + 1, arr_to_str(&players[m_index + 1], NONE, str_buf));
@@ -116,7 +116,7 @@ void game_loop() {
         end = true;
         break;
       }
-      default: assertion(false && "Unexpected message");
+      default: dassert(false && "Unexpected message");
     }
   }
 }
