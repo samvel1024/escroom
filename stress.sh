@@ -11,5 +11,5 @@ while [[ true ]]; do
     count=$(shuf -i 1-$3 -n 1)
     echo "************************ TEST $ctr ***********************"
     echo "Testing with $players players $rooms rooms $count requests"
-    ./test.sh "$players $rooms $count"
+    time ./test.sh "$players $rooms $count"
 done;
