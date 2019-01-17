@@ -1,6 +1,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -26,7 +27,6 @@ int min(int a, int b) {
   return a < b ? a : b;
 }
 
-using namespace std::chrono;
 int main() {
 
   string dir;
