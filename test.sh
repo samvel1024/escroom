@@ -19,9 +19,16 @@ cd input;
 echo "Running"
 cat manager.in | ./manager;
 
+if [ $( ls /dev/shm | grep '.*' | wc -l) -ne 0 ]; then
+    echo "Not clean shm"
+    exit 1;
+fi
+
+
 if [ $(grep -rnw "Invalid" *.out | wc -l) -ne 0 ]; then
   echo "Found invalid occurence";
   grep -rnw "Invalid" *.out;
+  exit 1;
 fi
 
 
