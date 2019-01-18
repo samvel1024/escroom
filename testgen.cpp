@@ -39,12 +39,12 @@ int main() {
   cout << players_size << " " << rooms_size << endl;
 
   for (int i = 0; i < rooms_size; ++i) {
-    rooms.emplace_back(rand_char(), rand_capacity());
+    rooms.push_back(make_pair(rand_char(), rand_capacity()));
     cout << rooms[i].first << " " << rooms[i].second << endl;
   }
 
   for (int i = 0; i < players_size; ++i) {
-    players.emplace_back(rand_char());
+    players.push_back(rand_char());
   }
 
   for (int curr_player = 0; curr_player < players_size; ++curr_player) {

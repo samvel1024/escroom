@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 project(escroom)
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_C_FLAGS "-g -Wall")
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_C_FLAGS "-Wall -Wextra -O3")
 
 macro(add_executable _name)
     _add_executable(${ARGV})

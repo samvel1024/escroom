@@ -38,6 +38,8 @@ if (__expr_val == 0) {\
 #define dassert(expr)
 #endif
 
+#define supress_unused(x) (void)(x)
+
 void *shared_mem_get(char *name, unsigned long size, bool init);
 
 void shared_mem_close(char *mem_name, void *shared_mem, size_t size);
@@ -50,7 +52,11 @@ void log_init(char *name, FILE *f);
 
 void log_info(const char *format, ...);
 
+#ifdef DEBUG
 void log_debug(const char *format, ...);
+#else
+#define log_debug(...)
+#endif
 
 char *arr_to_str(short *arr, short end, char *buff);
 

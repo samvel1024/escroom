@@ -120,16 +120,15 @@ void game_send_player_leaving_room(IpcManager *ipc, short player_id) {
  ***********************************************************************************/
 
 GameMsg *game_receive_client_event(IpcManager *ipc, short expected_ev, GameMsg *msg) {
+  supress_unused(expected_ev);
   ipc_getfrom_client(ipc, msg, MSG_SIZE);
   dassert((expected_ev & msg->type) != 0 && "Unexpected event type");
   return msg;
 }
 
 GameMsg *game_receive_server_event(IpcManager *ipc, short client, short expected_ev, GameMsg *msg) {
+  supress_unused(expected_ev);
   ipc_getfrom_server(ipc, msg, MSG_SIZE, client);
-  if ((expected_ev & msg->type) == 0) {
-    log_debug("Error: expected %d but got %d", expected_ev, msg->type);
-  }
   dassert((expected_ev & msg->type) != 0 && "Unexpected event type");
   return msg;
 }

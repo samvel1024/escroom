@@ -136,8 +136,7 @@ void game_define_new_game(Game *g, short room, short owner, short *players) {
     r->waiting_game_size++;
     g->players[players[i]].assigned_room = room;
   }
-  char msg[5000];
-  log_debug("Defined a game in room owned by r=%d own=%d players=%s", room, owner, arr_to_str(players, NONE, msg));
+  log_debug("Defined a game in room owned by r=%d own=%d ", room, owner);
 }
 
 bool game_add_player_to_waiting_list(Game *g, short room, short player) {
@@ -154,10 +153,6 @@ bool game_add_player_to_waiting_list(Game *g, short room, short player) {
       player_index = i;
     }
   }
-  if (player_index == NONE) {
-    printf("A");
-  }
-
   dassert((player_index != NONE) && "The game hosted in this room is not expecting the player to join");
   dassert((player_index >= r->inside_count) && "The player is already waiting for the game to start");
 
@@ -187,7 +182,7 @@ int game_find_room(Game *g, int type, int size) {
 
 bool game_is_ever_playable(Game *g, GameDef *def, int player_id) {
   dassert(player_id < g->player_count && player_id >= 0);
-
+  supress_unused(player_id);
   int player_count = 0;
   bool busy[MAX_PLAYERS];
   for (int i = 0; i < MAX_PLAYERS; ++i)

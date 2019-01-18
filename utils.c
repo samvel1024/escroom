@@ -33,8 +33,6 @@ void log_debug(const char *format, ...) {
   va_end(args);
 }
 
-#else
-void log_debug(const char *format, ...) {}
 #endif
 
 void log_info(const char *format, ...) {
