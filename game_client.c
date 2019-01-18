@@ -22,7 +22,7 @@ void open_input(int id) {
 #ifdef DEBUG
   freopen(create_str("../input/player-%d.in", id), "r", stdin);
 #else
-  freopen(create_str("player-%d.in", id), "r", stdin);
+  assertion(NULL != freopen(create_str("player-%d.in", id), "r", stdin));
 #endif
 }
 
