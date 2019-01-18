@@ -76,14 +76,18 @@ void spawn_players() {
   }
 }
 
-void notify_if_any_playable() {
-  int r_id = start_playable();
-  if (r_id == NONE) return;
+void notify_game_started(int r_id) {
   Room *r = &game->rooms[r_id];
   for (int i = 0; r->players_inside[i] != NONE; ++i) {
     log_debug("Inviting player %d to play in %d", r->players_inside[i], r_id);
     game_send_server_invite_room(ipc, r_id, r->players_inside[i], game);
   }
+}
+
+void notify_if_any_playable() {
+  int r_id = start_playable();
+  if (r_id == NONE) return;
+  notify_game_started(r_id);
 }
 
 void game_loop() {
@@ -111,8 +115,10 @@ void game_loop() {
         bool ok = game_is_ever_playable(game, &msg->game_def, msg->player_id);
         game_send_server_received_def(ipc, msg->player_id, ok);
         if (ok) {
-          add_to_queue(&msg->game_def);
-          notify_if_any_playable();
+          int room_id = game_start_if_possible(game, &msg->game_def);
+          if (room_id == NONE)
+            add_to_queue(&msg->game_def);
+          else notify_game_started(room_id);
         }
         break;
       }
@@ -158,7 +164,7 @@ void game_loop() {
 
 void print_player_stats() {
   for (int i = 0; i < game->player_count; ++i) {
-    log_info("Player %d left after %d game(s)\n", i+1, game->players[i].games_played);
+    log_info("Player %d left after %d game(s)\n", i + 1, game->players[i].games_played);
   }
 }
 
