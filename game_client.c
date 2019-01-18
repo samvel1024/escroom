@@ -45,7 +45,7 @@ void read_and_send_def() {
 
 void game_loop() {
   char player_type;
-  scanf("%c\n", &player_type);
+  assertion(scanf("%c\n", &player_type) == 1 && "Illegal input format");
   game_send_player_register(ipc, player_id, player_type);
   bool end = false;
   while (!end) {

@@ -53,7 +53,7 @@ void init_rooms() {
   char r;
   int c;
   for (int i = 0; i < game->room_count; ++i) {
-    scanf("%c %d\n", &r, &c);
+    assertion(scanf("%c %d\n", &r, &c) == 2 && "Illegal input format");
     game_init_room(game, i, r, c);
   }
 }
@@ -174,7 +174,7 @@ int main() {
   open_debug_input();
   log_init("Manager", stdout);
   int players, rooms;
-  scanf("%d %d\n", &players, &rooms);
+  assertion(scanf("%d %d\n", &players, &rooms) == 2 && "Illegal input format");
   game = game_init(players, rooms);
   ipc = ipc_create(true, "e2", -1);
   init_rooms();
