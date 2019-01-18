@@ -23,9 +23,9 @@
 void print_stacktrace();
 
 #define assertion(__expr) {\
-int __expr_val = (__expr); \
+int __expr_val = (int) (__expr); \
 if (__expr_val == 0) {\
-    fprintf( stderr,"[" #__expr "] assertion failed, ret_val=%d, errno=%d, error_str=%s pid=%d\n", __expr_val, errno, strerror(errno), getpid()); \
+    fprintf( stderr,"[ %s ] assertion failed, ret_val=%d, errno=%d, error_str=%s pid=%d\n", #__expr, __expr_val, errno, strerror(errno), getpid()); \
     fprintf( stderr, "Location: file=%s, line=%d\n", __FILE__, __LINE__); \
     print_stacktrace(); \
     exit(1); \
