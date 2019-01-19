@@ -70,6 +70,7 @@ void spawn_players() {
         sprintf(str, "%d", i);
         execlp("./player", "player", str, NULL);
         dassert(false && "Could not start player");
+        break;
       }
       default:child_pids[i] = pid;
     }
