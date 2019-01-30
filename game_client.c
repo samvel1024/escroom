@@ -88,7 +88,7 @@ void game_loop() {
           players[players_len] = (short) (msg->players_in_room[players_len] + 1);
         }
         players[players_len] = NONE;
-        if (player_id == players[0])
+        if (player_id + 1 == players[0])
           log_info("Game defined by %d is going to start: room %d, players %s\n", msg->room_owner + 1,
                    msg->room_id + 1, arr_to_str(players, NONE, str_buf));
 
